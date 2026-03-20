@@ -395,7 +395,18 @@ export default function UXOHire() {
                   </div>
                   <div style={styles.formRow}>
                     <button style={styles.btnSecondary} onClick={() => setProfileStep(2)}>← Back</button>
-                    <button style={styles.btnPrimary} onClick={() => { alert("Profile created! (Demo mode)"); setView("techs"); setProfileStep(1); }}>Submit Profile ✓</button>
+                    <button style={styles.btnPrimary} onClick={async () => {
+  const { error } = await supabase.from('tech_profiles').insert([{
+    name: profile.name,
+    location: profile.location,
+    experience: profile.experience,
+    summary: profile.summary,
+    certs: profile.certs,
+    open_to_work: openToWork
+  }]);
+  if (error) { alert("Something went wrong. Please try again."); }
+  else { setView("techs"); setProfileStep(1); }
+}}>Submit Profile ✓</button>
                   </div>
                 </div>
               )}
