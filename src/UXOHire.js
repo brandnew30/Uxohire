@@ -495,7 +495,20 @@ export default function UXOHire() {
                   </div>
                   <div style={styles.formRow}>
                     <button style={styles.btnSecondary} onClick={() => setPostStep(2)}>← Back</button>
-                    <button style={styles.btnPrimary} onClick={() => { alert("Payment flow coming soon! (Demo mode)"); setView("jobs"); setPostStep(1); }}>Pay & Post Job →</button>
+                    <button style={styles.btnPrimary} onClick={async () => {
+  const { error } = await supabase.from('job_posts').insert([{
+    company: jobPost.company,
+    title: jobPost.title,
+    location: jobPost.location,
+    type: jobPost.type,
+    salary: jobPost.salary,
+    description: jobPost.description,
+    certs: jobPost.certs,
+    active: true
+  }]);
+  if (error) { alert("Something went wrong. Please try again."); }
+  else { setView("jobs"); setPostStep(1); }
+}}>Pay & Post Job →</button>
                   </div>
                 </div>
               )}
