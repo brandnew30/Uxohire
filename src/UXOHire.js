@@ -1,3 +1,9 @@
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+const supabase = createClient(
+  'https://jdtqzmzcdwnvfcajwsch.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkdHF6bXpjZHdudmZjYWp3c2NoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjM0NTMsImV4cCI6MjA4OTU5OTQ1M30.Eq7O7vvG5zqA9He1dJ7WTXNGjF1TGkhE8efOjYMfYds'
+)
 import { useState } from "react";
 
 const SAMPLE_JOBS = [
