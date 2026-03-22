@@ -497,18 +497,44 @@ export default function UXOHire() {
                   <div style={styles.formRow}>
                     <button style={styles.btnSecondary} onClick={() => setPostStep(2)}>← Back</button>
                     <button style={styles.btnPrimary} onClick={async () => {
-  const { error } = await supabase.from('job_posts').insert([{
-    company: jobPost.company,
-    title: jobPost.title,
-    location: jobPost.location,
-    type: jobPost.type,
-    salary: jobPost.salary,
-    description: jobPost.description,
-    certs: jobPost.certs,
-    active: true
-  }]);
-  if (error) { alert("Something went wrong. Please try again."); }
-  else { setView("jobs"); setPostStep(1); }
+  try {
+    const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${STRIPE_PUBLISHABLE_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        'payment_method_types[]': 'card',
+        'line_items[0][price_data][currency]': 'usd',
+        'line_items[0][price_data][product_data][name]': 'UXO Hire Job Posting',
+        'line_items[0][price_data][unit_amount]': '14900',
+        'line_items[0][quantity]': '1',
+        'mode': 'payment',
+        'success_url': 'https://uxohire.vercel.app/success',
+        'cancel_url': 'https://uxohire.vercel.app/cancel'
+      })
+    });
+    const session = await response.json();
+    if (session.url) {
+      window.location.href = session.url;
+    } else {
+      const { error } = await supabase.from('job_posts').insert([{
+        company: jobPost.company,
+        title: jobPost.title,
+        location: jobPost.location,
+        type: jobPost.type,
+        salary: jobPost.salary,
+        description: jobPost.description,
+        certs: jobPost.certs,
+        active: true
+      }]);
+      if (error) { alert("Something went wrong. Please try again."); }
+      else { setView("jobs"); setPostStep(1); }
+    }
+  } catch(err) {
+    alert("Payment processing unavailable. Please try again.");
+  }
 }}>Pay & Post Job →</button>
                   </div>
                 </div>
