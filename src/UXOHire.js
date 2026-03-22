@@ -1,4 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+const STRIPE_PUBLISHABLE_KEY = 'pk_live_51TDuXKK4FcmAAisq2O4SF2S0WW2yFcYF9T2r6QeN2wG8rY5QbmV7HWDMiZyYy9qgf22whJbynDpLaeJ7oJVVCqlU00GkTzcyhT'
 
 const supabase = createClient(
   'https://jdtqzmzcdwnvfcajwsch.supabase.co',
