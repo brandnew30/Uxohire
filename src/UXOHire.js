@@ -936,7 +936,7 @@ const styles = {
   subField: { paddingTop: 8, display: "flex", flexDirection: "column", gap: 8 },
   errorMsg: { background: "#2a0a0a", border: "1px solid #8B0000", borderRadius: 6, padding: "8px 12px", fontSize: 13, color: "#ff6b6b" },
   warnMsg: { background: "#2a1a08", border: "1px solid #d97706", borderRadius: 6, padding: "8px 12px", fontSize: 13, color: "#d97706" },
-  uploadBox: { border: "2px dashed #2a2c2e", borderRadius: 8, padding: "20px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 },
+  uploadBox: { border: "2px dashed #2a2c2e", borderRadius: 8, padding: "20px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, position: "relative", cursor: "pointer" },
   uploadIcon: { fontSize: 24 },
   uploadText: { fontSize: 13, color: "#8a8580", margin: 0 },
   uploadSub: { fontSize: 12, color: "#555", margin: "0 0 8px" },
@@ -965,5 +965,5 @@ const styles = {
   footer: { borderTop: "1px solid #1a1c1e", padding: "24px" },
   footerInner: { maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: 16 },
   footerSub: { fontSize: 13, color: "#555" },
-  fileInput: { background: "#0d0f10", border: "1px solid #2a2c2e", borderRadius: 6, color: "#e8e4dc", padding: "10px 14px", fontSize: 13, fontFamily: "inherit", width: "100%", boxSizing: "border-box", cursor: "pointer" },
+  fileInput: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" },
 };
