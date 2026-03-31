@@ -2,7 +2,20 @@ import { useState, useEffect } from "react";
 
 const supabaseUrl = 'https://jdtqzmzcdwnvfcajwsch.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkdHF6bXpjZHdudmZjYWp3c2NoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjM0NTMsImV4cCI6MjA4OTU5OTQ1M30.Eq7O7vvG5zqA9He1dJ7WTXNGjF1TGkhE8efOjYMfYds';
-
+async function uploadFile(file, folder) {
+  const fileName = `${folder}/${Date.now()}_${file.name}`;
+  const res = await fetch(`${supabaseUrl}/storage/v1/object/${fileName}`, {
+    method: 'POST',
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': file.type,
+      'x-upsert': 'true'
+    },
+    body: file
+  });
+  return res.ok ? { path: fileName, error: null } : { path: null, error: await res.json() };
+}
 async function supabaseInsert(table, data) {
   const res = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
     method: 'POST',
