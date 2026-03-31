@@ -661,31 +661,34 @@ export default function UXOHire() {
 
                   {/* CERT UPLOADS */}
                  <label style={styles.label}>Upload Certification Documents</label>
-                  <div style={styles.uploadBox}>
-                    <span style={styles.uploadIcon}>📎</span>
-                    <p style={styles.uploadText}>Upload DOD certs, HAZWOPER card, etc.</p>
-                    <p style={styles.uploadSub}>PDF, JPG, PNG · Max 10MB each</p>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" multiple style={styles.fileInput} onChange={async (e) => {
-                      const files = Array.from(e.target.files);
-                      for (const file of files) {
-                        const { path, error } = await uploadFile(file, 'certs');
-                        if (error) alert(`Failed to upload ${file.name}`);
-                      }
-                    }} />
-                  </div>
+<label htmlFor="certUpload" style={styles.uploadBox}>
+  <span style={styles.uploadIcon}>📎</span>
+  <p style={styles.uploadText}>Click here to upload certs (PDF, JPG, PNG)</p>
+  <p style={styles.uploadSub}>Max 10MB each</p>
+  <input id="certUpload" type="file" accept=".pdf,.jpg,.jpeg,.png" multiple style={{display:"none"}} onChange={async (e) => {
+    const files = Array.from(e.target.files);
+    for (const file of files) {
+      const { path, error } = await uploadFile(file, 'certs');
+      if (error) alert(`Failed to upload ${file.name}`);
+      else alert(`${file.name} uploaded successfully!`);
+    }
+  }} />
+</label>
 
-                  <label style={styles.label}>Upload Resume</label>
-                  <div style={styles.uploadBox}>
-                    <span style={styles.uploadIcon}>📄</span>
-                    <p style={styles.uploadText}>Upload your resume</p>
-                    <p style={styles.uploadSub}>PDF or Word doc · Max 10MB</p>
-                    <input type="file" accept=".pdf,.doc,.docx" style={styles.fileInput} onChange={async (e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const { path, error } = await uploadFile(file, 'resumes');
-                        if (error) alert(`Failed to upload ${file.name}`);
-                      }
-                    }} />
+<label style={styles.label}>Upload Resume</label>
+<label htmlFor="resumeUpload" style={styles.uploadBox}>
+  <span style={styles.uploadIcon}>📄</span>
+  <p style={styles.uploadText}>Click here to upload resume (PDF, Word)</p>
+  <p style={styles.uploadSub}>Max 10MB</p>
+  <input id="resumeUpload" type="file" accept=".pdf,.doc,.docx" style={{display:"none"}} onChange={async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const { path, error } = await uploadFile(file, 'resumes');
+      if (error) alert(`Failed to upload ${file.name}`);
+      else alert(`${file.name} uploaded successfully!`);
+    }
+  }} />
+</label>
                   </div>
 
                   <div style={styles.formRow}>
