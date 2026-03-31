@@ -660,12 +660,18 @@ export default function UXOHire() {
                   </div>
 
                   {/* CERT UPLOADS */}
-                  <label style={styles.label}>Upload Certification Documents</label>
+                 <label style={styles.label}>Upload Certification Documents</label>
                   <div style={styles.uploadBox}>
                     <span style={styles.uploadIcon}>📎</span>
                     <p style={styles.uploadText}>Upload DOD certs, HAZWOPER card, etc.</p>
                     <p style={styles.uploadSub}>PDF, JPG, PNG · Max 10MB each</p>
-                    <button style={styles.btnSecondary}>Browse Files</button>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" multiple style={styles.fileInput} onChange={async (e) => {
+                      const files = Array.from(e.target.files);
+                      for (const file of files) {
+                        const { path, error } = await uploadFile(file, 'certs');
+                        if (error) alert(`Failed to upload ${file.name}`);
+                      }
+                    }} />
                   </div>
 
                   <label style={styles.label}>Upload Resume</label>
@@ -673,7 +679,13 @@ export default function UXOHire() {
                     <span style={styles.uploadIcon}>📄</span>
                     <p style={styles.uploadText}>Upload your resume</p>
                     <p style={styles.uploadSub}>PDF or Word doc · Max 10MB</p>
-                    <button style={styles.btnSecondary}>Browse Files</button>
+                    <input type="file" accept=".pdf,.doc,.docx" style={styles.fileInput} onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const { path, error } = await uploadFile(file, 'resumes');
+                        if (error) alert(`Failed to upload ${file.name}`);
+                      }
+                    }} />
                   </div>
 
                   <div style={styles.formRow}>
@@ -953,4 +965,5 @@ const styles = {
   footer: { borderTop: "1px solid #1a1c1e", padding: "24px" },
   footerInner: { maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: 16 },
   footerSub: { fontSize: 13, color: "#555" },
+  fileInput: { background: "#0d0f10", border: "1px solid #2a2c2e", borderRadius: 6, color: "#e8e4dc", padding: "10px 14px", fontSize: 13, fontFamily: "inherit", width: "100%", boxSizing: "border-box", cursor: "pointer" },
 };
