@@ -498,6 +498,8 @@ export default function UXOHire() {
                 <div style={styles.formFields}>
                   <label style={styles.label}>Full Name</label>
                   <input style={styles.input} placeholder="John Smith" value={profile.name} onChange={e => setProfile(p => ({ ...p, name: e.target.value }))} />
+                <label style={styles.label}>Email Address</label>
+<input style={styles.input} placeholder="you@email.com" type="email" value={profile.email || ""} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} />
                   <label style={styles.label}>Location (City, State)</label>
                   <input style={styles.input} placeholder="Dallas, TX" value={profile.location} onChange={e => setProfile(p => ({ ...p, location: e.target.value }))} />
                   <label style={styles.label}>UXO Hours</label>
