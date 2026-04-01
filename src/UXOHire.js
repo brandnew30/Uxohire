@@ -703,7 +703,6 @@ export default function UXOHire() {
     }
   }} />
 </label>
-                  </div>
 
                   <div style={styles.formRow}>
                     <button style={styles.btnSecondary} onClick={() => setProfileStep(1)}>← Back</button>
