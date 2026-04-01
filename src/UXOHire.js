@@ -561,11 +561,18 @@ export default function UXOHire() {
                             <div style={styles.warnMsg}>⚠️ Your 8-HR HAZWOPER expires within 30 days. Schedule your renewal soon.</div>
                           )}
                           <label style={{ ...styles.label, marginTop: 8 }}>Upload 8-HR Cert</label>
-                          <div style={styles.uploadBox}>
-                            <span style={styles.uploadIcon}>📎</span>
-                            <p style={styles.uploadText}>Click to upload cert (PDF, JPG, PNG)</p>
-                            <button style={styles.btnSecondary}>Browse Files</button>
-                          </div>
+                          <label htmlFor="hazwoper8Upload" style={styles.uploadBox}>
+  <span style={styles.uploadIcon}>📎</span>
+  <p style={styles.uploadText}>Click here to upload 8-HR cert (PDF, JPG, PNG)</p>
+  <input id="hazwoper8Upload" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}} onChange={async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const { path, error } = await uploadFile(file, 'certs');
+      if (error) alert(`Failed to upload ${file.name}`);
+      else alert(`${file.name} uploaded successfully!`);
+    }
+  }} />
+</label>
                         </div>
                       )}
                     </div>
@@ -589,11 +596,18 @@ export default function UXOHire() {
                           <div style={styles.warnMsg}>⚠️ Your physical expires within 30 days. Schedule your renewal soon.</div>
                         )}
                         <label style={{ ...styles.label, marginTop: 8 }}>Upload Physical</label>
-                        <div style={styles.uploadBox}>
-                          <span style={styles.uploadIcon}>📎</span>
-                          <p style={styles.uploadText}>Click to upload physical (PDF, JPG, PNG)</p>
-                          <button style={styles.btnSecondary}>Browse Files</button>
-                        </div>
+                        <label htmlFor="physicalUpload" style={styles.uploadBox}>
+  <span style={styles.uploadIcon}>📎</span>
+  <p style={styles.uploadText}>Click here to upload physical (PDF, JPG, PNG)</p>
+  <input id="physicalUpload" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}} onChange={async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const { path, error } = await uploadFile(file, 'physicals');
+      if (error) alert(`Failed to upload ${file.name}`);
+      else alert(`${file.name} uploaded successfully!`);
+    }
+  }} />
+</label>
                       </div>
                     )}
                   </div>
