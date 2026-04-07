@@ -2,20 +2,7 @@ import { useState, useEffect } from "react";
 
 const supabaseUrl = 'https://jdtqzmzcdwnvfcajwsch.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkdHF6bXpjZHdudmZjYWp3c2NoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjM0NTMsImV4cCI6MjA4OTU5OTQ1M30.Eq7O7vvG5zqA9He1dJ7WTXNGjF1TGkhE8efOjYMfYds';
-async function uploadFile(file, folder) {
-  const fileName = `${folder}/${Date.now()}_${file.name}`;
-  const res = await fetch(`${supabaseUrl}/storage/v1/object/uxo-uploads/${fileName}`, {
-    method: 'POST',
-    headers: {
-      'apikey': supabaseKey,
-      'Authorization': `Bearer ${supabaseKey}`,
-      'Content-Type': file.type,
-      'x-upsert': 'true'
-    },
-    body: file
-  });
-  return res.ok ? { path: fileName, error: null } : { path: null, error: await res.json() };
-}
+
 async function supabaseInsert(table, data) {
   const res = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
     method: 'POST',
@@ -30,131 +17,62 @@ async function supabaseInsert(table, data) {
   return res.ok ? { error: null } : { error: await res.json() };
 }
 
+async function uploadFile(file, folder) {
+  const fileName = `${folder}/${Date.now()}_${file.name}`;
+  const res = await fetch(`${supabaseUrl}/storage/v1/object/uxo-uploads/${fileName}`, {
+    method: 'POST',
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': file.type,
+      'x-upsert': 'true'
+    },
+    body: file
+  });
+  return res.ok ? { path: fileName, error: null } : { path: null, error: await res.json() };
+}
+
 const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/YOUR_LINK_HERE';
 
 const isExpired = (dateStr) => {
   if (!dateStr) return false;
-  const issued = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now - issued;
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  const diffDays = (new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24);
   return diffDays > 365;
 };
 
 const isExpiringSoon = (dateStr) => {
   if (!dateStr) return false;
-  const issued = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now - issued;
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  const diffDays = (new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24);
   return diffDays > 335 && diffDays <= 365;
 };
 
 const isOlderThanOneYear = (dateStr) => {
   if (!dateStr) return false;
-  const issued = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now - issued;
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  const diffDays = (new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24);
   return diffDays > 365;
 };
 
 const SAMPLE_JOBS = [
-  {
-    id: 1,
-    company: "Ordnance Solutions Group",
-    title: "Senior UXO Tech II",
-    location: "Huntsville, AL",
-    type: "Contract",
-    requiredCerts: ["DOD UXO Tech II", "HAZWOPER 40-HR"],
-    preferredCerts: ["Security Clearance", "CDL"],
-    salary: "$45–$55/hr",
-    posted: "2 days ago",
-    description: "Seeking experienced UXO Tech II for munitions response project on former military range. Must have active clearance and 5+ years field experience.",
-  },
-  {
-    id: 2,
-    company: "Clearance Corp Inc.",
-    title: "UXO Tech I – Field Survey",
-    location: "San Diego, CA",
-    type: "Full-Time",
-    requiredCerts: ["DOD UXO Tech I"],
-    preferredCerts: ["Dive Certified", "HAZWOPER 40-HR"],
-    salary: "$38–$44/hr",
-    posted: "5 days ago",
-    description: "Entry-level UXO Tech I needed for underwater UXO survey operations. Dive certification a plus. Travel required.",
-  },
-  {
-    id: 3,
-    company: "Apex Munitions Response",
-    title: "UXO Quality Control Specialist",
-    location: "Remote / Travel",
-    type: "Contract",
-    requiredCerts: ["DOD UXO Tech III", "QC Specialist"],
-    preferredCerts: ["Security Clearance"],
-    salary: "$65–$80/hr",
-    posted: "1 week ago",
-    description: "QC Specialist needed to oversee field teams across multiple sites. Must hold Tech III and have prior QC experience.",
-  },
+  { id: 1, company: "Ordnance Solutions Group", title: "Senior UXO Tech II", location: "Huntsville, AL", type: "Contract", requiredCerts: ["DOD UXO Tech II", "HAZWOPER 40-HR"], preferredCerts: ["Security Clearance", "CDL"], salary: "$45–$55/hr", posted: "2 days ago", description: "Seeking experienced UXO Tech II for munitions response project on former military range. Must have active clearance and 5+ years field experience." },
+  { id: 2, company: "Clearance Corp Inc.", title: "UXO Tech I – Field Survey", location: "San Diego, CA", type: "Full-Time", requiredCerts: ["DOD UXO Tech I"], preferredCerts: ["Dive Certified", "HAZWOPER 40-HR"], salary: "$38–$44/hr", posted: "5 days ago", description: "Entry-level UXO Tech I needed for underwater UXO survey operations. Dive certification a plus. Travel required." },
+  { id: 3, company: "Apex Munitions Response", title: "UXO Quality Control Specialist", location: "Remote / Travel", type: "Contract", requiredCerts: ["DOD UXO Tech III", "QC Specialist"], preferredCerts: ["Security Clearance"], salary: "$65–$80/hr", posted: "1 week ago", description: "QC Specialist needed to oversee field teams across multiple sites. Must hold Tech III and have prior QC experience." },
 ];
 
 const SAMPLE_TECHS = [
-  {
-    id: 1,
-    name: "Marcus R.",
-    location: "Fayetteville, NC",
-    uxoHours: "4,200",
-    travel: "Nationwide",
-    dodCerts: ["DOD UXO Tech III"],
-    hazwoper40: true,
-    hazwoper8: true,
-    physicalCurrent: true,
-    militaryEod: true,
-    clearance: true,
-    clearanceLevel: "Secret",
-    diveCert: false,
-    driversLicense: true,
-    cdl: true,
-    available: true,
-    summary: "Former EOD technician with extensive civilian UXO experience. Specializes in range clearance and DP operations.",
-  },
-  {
-    id: 2,
-    name: "Denise K.",
-    location: "Tampa, FL",
-    uxoHours: "2,800",
-    travel: "Nationwide",
-    dodCerts: ["DOD UXO Tech II"],
-    hazwoper40: true,
-    hazwoper8: true,
-    physicalCurrent: true,
-    militaryEod: false,
-    clearance: false,
-    diveCert: true,
-    driversLicense: true,
-    cdl: false,
-    available: true,
-    summary: "UXO Tech II with underwater survey background. Available for coastal and inland water projects.",
-  },
+  { id: 1, name: "Marcus R.", location: "Fayetteville, NC", uxoHours: "4,200", travel: "Nationwide", dodCerts: ["DOD UXO Tech III"], hazwoper40: true, hazwoper8: true, physicalCurrent: true, militaryEod: true, clearance: true, clearanceLevel: "Secret", diveCert: false, driversLicense: true, cdl: true, available: true, summary: "Former EOD technician with extensive civilian UXO experience. Specializes in range clearance and DP operations." },
+  { id: 2, name: "Denise K.", location: "Tampa, FL", uxoHours: "2,800", travel: "Nationwide", dodCerts: ["DOD UXO Tech II"], hazwoper40: true, hazwoper8: true, physicalCurrent: true, militaryEod: false, clearance: false, diveCert: true, driversLicense: true, cdl: false, available: true, summary: "UXO Tech II with underwater survey background. Available for coastal and inland water projects." },
 ];
 
-const DOD_CERT_OPTIONS = [
-  "DOD UXO Tech I",
-  "DOD UXO Tech II",
-  "DOD UXO Tech III",
-  "QC Specialist",
-  "UXO Safety Officer",
-];
-
+const DOD_CERT_OPTIONS = ["DOD UXO Tech I", "DOD UXO Tech II", "DOD UXO Tech III", "QC Specialist", "UXO Safety Officer"];
 const TRAVEL_OPTIONS = ["Local only", "Regional", "Nationwide", "International"];
+const CERT_COLORS = { "DOD UXO Tech I": "#1a4a6b", "DOD UXO Tech II": "#1a6b4a", "DOD UXO Tech III": "#4a1a6b", "QC Specialist": "#6b4a1a", "UXO Safety Officer": "#6b1a3a" };
 
-const CERT_COLORS = {
-  "DOD UXO Tech I": "#1a4a6b",
-  "DOD UXO Tech II": "#1a6b4a",
-  "DOD UXO Tech III": "#4a1a6b",
-  "QC Specialist": "#6b4a1a",
-  "UXO Safety Officer": "#6b1a3a",
-};
+const ALL_CERT_OPTIONS = [
+  "DOD UXO Tech I", "DOD UXO Tech II", "DOD UXO Tech III",
+  "QC Specialist", "UXO Safety Officer", "HAZWOPER 40-HR",
+  "8-HR HAZWOPER Refresher", "Current Physical", "Security Clearance",
+  "Dive Certified", "Driver's License", "CDL", "Military/EOD Background",
+];
 
 export default function UXOHire() {
   const [view, setView] = useState("jobs");
@@ -167,55 +85,26 @@ export default function UXOHire() {
   const [filterLocation, setFilterLocation] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [profileSubmitted, setProfileSubmitted] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const [profile, setProfile] = useState({
-    name: "",
-    location: "",
-    uxoHours: "",
-    travel: "Nationwide",
-    summary: "",
-    dodCerts: [],
-    hazwoper40: false,
-    hazwoper40Date: "",
-    hazwoper8: false,
-    hazwoper8Date: "",
-    physicalCurrent: false,
-    physicalDate: "",
-    militaryEod: false,
-    clearance: false,
-    clearanceLevel: "",
-    diveCert: false,
-    driversLicense: false,
-    cdl: false,
+    name: "", email: "", location: "", uxoHours: "", travel: "Nationwide", summary: "",
+    dodCerts: [], hazwoper40: false, hazwoper40Date: "", hazwoper8: false, hazwoper8Date: "",
+    physicalCurrent: false, physicalDate: "", militaryEod: false, clearance: false,
+    clearanceLevel: "", diveCert: false, driversLicense: false, cdl: false,
   });
 
   const [jobPost, setJobPost] = useState({
-    company: "",
-    title: "",
-    location: "",
-    type: "Contract",
-    salary: "",
-    description: "",
-    requiredCerts: [],
-    preferredCerts: [],
+    company: "", title: "", location: "", type: "Contract", salary: "", description: "",
+    requiredCerts: [], preferredCerts: [],
   });
-
-  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const notes = [];
-    if (profile.hazwoper8 && isExpiringSoon(profile.hazwoper8Date)) {
-      notes.push("⚠️ Your 8-HR HAZWOPER refresher expires within 30 days. Please update it soon.");
-    }
-    if (profile.physicalCurrent && isExpiringSoon(profile.physicalDate)) {
-      notes.push("⚠️ Your physical expires within 30 days. Please schedule a renewal.");
-    }
-    if (profile.hazwoper8 && isExpired(profile.hazwoper8Date)) {
-      notes.push("🚫 Your 8-HR HAZWOPER refresher has expired. Your profile is hidden from companies requiring current certs.");
-    }
-    if (profile.physicalCurrent && isExpired(profile.physicalDate)) {
-      notes.push("🚫 Your physical has expired. Your profile is hidden from companies requiring a current physical.");
-    }
+    if (profile.hazwoper8 && isExpiringSoon(profile.hazwoper8Date)) notes.push("⚠️ Your 8-HR HAZWOPER refresher expires within 30 days. Please update it soon.");
+    if (profile.physicalCurrent && isExpiringSoon(profile.physicalDate)) notes.push("⚠️ Your physical expires within 30 days. Please schedule a renewal.");
+    if (profile.hazwoper8 && isExpired(profile.hazwoper8Date)) notes.push("🚫 Your 8-HR HAZWOPER refresher has expired. Your profile is hidden from companies requiring current certs.");
+    if (profile.physicalCurrent && isExpired(profile.physicalDate)) notes.push("🚫 Your physical has expired. Your profile is hidden from companies requiring a current physical.");
     setNotifications(notes);
   }, [profile.hazwoper8Date, profile.physicalDate, profile.hazwoper8, profile.physicalCurrent]);
 
@@ -223,62 +112,49 @@ export default function UXOHire() {
 
   const validateStep2 = () => {
     const newErrors = {};
-    if (profile.hazwoper8 && isExpired(profile.hazwoper8Date)) {
-      newErrors.hazwoper8Date = "Your 8-HR HAZWOPER is not current. Please select No.";
-    }
-    if (profile.physicalCurrent && isExpired(profile.physicalDate)) {
-      newErrors.physicalDate = "Your physical is not current. Please select No.";
-    }
+    if (profile.hazwoper8 && isExpired(profile.hazwoper8Date)) newErrors.hazwoper8Date = "Your 8-HR HAZWOPER is not current. Please select No.";
+    if (profile.physicalCurrent && isExpired(profile.physicalDate)) newErrors.physicalDate = "Your physical is not current. Please select No.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const toggleDodCert = (cert) => {
-    setProfile(p => ({
-      ...p,
-      dodCerts: p.dodCerts.includes(cert)
-        ? p.dodCerts.filter(c => c !== cert)
-        : [...p.dodCerts, cert]
-    }));
-  };
+  const toggleDodCert = (cert) => setProfile(p => ({ ...p, dodCerts: p.dodCerts.includes(cert) ? p.dodCerts.filter(c => c !== cert) : [...p.dodCerts, cert] }));
 
   const toggleJobCert = (cert, type) => {
     setJobPost(p => {
       const field = type === 'required' ? 'requiredCerts' : 'preferredCerts';
       const other = type === 'required' ? 'preferredCerts' : 'requiredCerts';
-      const current = p[field];
-      const otherList = p[other].filter(c => c !== cert);
-      return {
-        ...p,
-        [field]: current.includes(cert) ? current.filter(c => c !== cert) : [...current, cert],
-        [other]: otherList
-      };
+      return { ...p, [field]: p[field].includes(cert) ? p[field].filter(c => c !== cert) : [...p[field], cert], [other]: p[other].filter(c => c !== cert) };
     });
   };
 
-  const ALL_CERT_OPTIONS = [
-    "DOD UXO Tech I", "DOD UXO Tech II", "DOD UXO Tech III",
-    "QC Specialist", "UXO Safety Officer", "HAZWOPER 40-HR",
-    "8-HR HAZWOPER Refresher", "Current Physical", "Security Clearance",
-    "Dive Certified", "Driver's License", "CDL",
-    "Military/EOD Background",
-  ];
-
   const filteredJobs = SAMPLE_JOBS.filter(j => {
-    const certMatch = filterCert
-      ? j.requiredCerts.includes(filterCert) || j.preferredCerts.includes(filterCert)
-      : true;
-    const locMatch = filterLocation
-      ? j.location.toLowerCase().includes(filterLocation.toLowerCase())
-      : true;
+    const certMatch = filterCert ? j.requiredCerts.includes(filterCert) || j.preferredCerts.includes(filterCert) : true;
+    const locMatch = filterLocation ? j.location.toLowerCase().includes(filterLocation.toLowerCase()) : true;
     return certMatch && locMatch;
   });
+
+  const handleSubmitProfile = async () => {
+    const { error } = await supabaseInsert('tech_profiles', {
+      name: profile.name, email: profile.email, location: profile.location,
+      uxo_hours: profile.uxoHours, travel: profile.travel, summary: profile.summary,
+      dod_certs: profile.dodCerts, hazwoper_40: profile.hazwoper40,
+      hazwoper_40_date: profile.hazwoper40Date || null, hazwoper_8: profile.hazwoper8,
+      hazwoper_8_date: profile.hazwoper8Date || null, physical_current: profile.physicalCurrent,
+      physical_date: profile.physicalDate || null, military_eod: profile.militaryEod,
+      clearance: profile.clearance, clearance_level: profile.clearanceLevel,
+      dive_cert: profile.diveCert, drivers_license: profile.driversLicense,
+      cdl: profile.cdl, open_to_work: openToWork
+    });
+    if (error) { alert("Something went wrong. Please try again."); }
+    else { setProfileSubmitted(true); }
+  };
 
   return (
     <div style={styles.root}>
       <nav style={styles.nav}>
         <div style={styles.navInner}>
-          <div style={styles.logo} onClick={() => setView("jobs")}>
+          <div style={styles.logo} onClick={() => { setView("jobs"); setProfileSubmitted(false); }}>
             <span style={styles.logoIcon}>⬡</span>
             <span style={styles.logoText}>UXO<span style={styles.logoAccent}>hire</span></span>
           </div>
@@ -291,15 +167,6 @@ export default function UXOHire() {
       </nav>
 
       <main style={styles.main}>
-
-        {/* NOTIFICATIONS BANNER */}
-        {notifications.length > 0 && view === "techProfile" && (
-          <div style={styles.notifWrap}>
-            {notifications.map((n, i) => (
-              <div key={i} style={styles.notifBanner}>{n}</div>
-            ))}
-          </div>
-        )}
 
         {/* JOBS VIEW */}
         {view === "jobs" && !activeJob && (
@@ -338,18 +205,16 @@ export default function UXOHire() {
                   <div style={styles.certSection}>
                     <div style={styles.certLabel}>Required:</div>
                     <div style={styles.certTags}>
-                      {job.requiredCerts.map(c => (
-                        <span key={c} style={{ ...styles.certTag, background: "#8B0000" }}>{c}</span>
-                      ))}
+                      {job.requiredCerts.map(c => <span key={c} style={{ ...styles.certTag, background: "#8B0000" }}>{c}</span>)}
                     </div>
-                    {job.preferredCerts.length > 0 && <>
-                      <div style={styles.certLabel}>Preferred:</div>
-                      <div style={styles.certTags}>
-                        {job.preferredCerts.map(c => (
-                          <span key={c} style={{ ...styles.certTag, background: "#1a3a5a" }}>{c}</span>
-                        ))}
-                      </div>
-                    </>}
+                    {job.preferredCerts.length > 0 && (
+                      <>
+                        <div style={styles.certLabel}>Preferred:</div>
+                        <div style={styles.certTags}>
+                          {job.preferredCerts.map(c => <span key={c} style={{ ...styles.certTag, background: "#1a3a5a" }}>{c}</span>)}
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div style={styles.cardFooter}>
                     <span style={styles.cardPosted}>Posted {job.posted}</span>
@@ -380,18 +245,16 @@ export default function UXOHire() {
               <div style={styles.divider} />
               <h3 style={styles.sectionLabel}>Required Certifications</h3>
               <div style={styles.certTags}>
-                {activeJob.requiredCerts.map(c => (
-                  <span key={c} style={{ ...styles.certTag, background: "#8B0000" }}>{c}</span>
-                ))}
+                {activeJob.requiredCerts.map(c => <span key={c} style={{ ...styles.certTag, background: "#8B0000" }}>{c}</span>)}
               </div>
-              {activeJob.preferredCerts.length > 0 && <>
-                <h3 style={styles.sectionLabel}>Preferred Certifications</h3>
-                <div style={styles.certTags}>
-                  {activeJob.preferredCerts.map(c => (
-                    <span key={c} style={{ ...styles.certTag, background: "#1a3a5a" }}>{c}</span>
-                  ))}
-                </div>
-              </>}
+              {activeJob.preferredCerts.length > 0 && (
+                <>
+                  <h3 style={styles.sectionLabel}>Preferred Certifications</h3>
+                  <div style={styles.certTags}>
+                    {activeJob.preferredCerts.map(c => <span key={c} style={{ ...styles.certTag, background: "#1a3a5a" }}>{c}</span>)}
+                  </div>
+                </>
+              )}
               <h3 style={styles.sectionLabel}>Job Description</h3>
               <p style={styles.detailDesc}>{activeJob.description}</p>
               <button style={styles.btnPrimary}>Apply Now</button>
@@ -422,9 +285,7 @@ export default function UXOHire() {
                   </div>
                   <p style={styles.techSummary}>{tech.summary}</p>
                   <div style={styles.certTags}>
-                    {tech.dodCerts.map(c => (
-                      <span key={c} style={{ ...styles.certTag, background: CERT_COLORS[c] || "#333" }}>{c}</span>
-                    ))}
+                    {tech.dodCerts.map(c => <span key={c} style={{ ...styles.certTag, background: CERT_COLORS[c] || "#333" }}>{c}</span>)}
                     {tech.hazwoper40 && <span style={{ ...styles.certTag, background: "#1a4a2e" }}>HAZWOPER 40-HR</span>}
                     {tech.diveCert && <span style={{ ...styles.certTag, background: "#0d5f7a" }}>Dive Certified</span>}
                     {tech.clearance && <span style={{ ...styles.certTag, background: "#8B0000" }}>Clearance: {tech.clearanceLevel}</span>}
@@ -457,9 +318,7 @@ export default function UXOHire() {
               <div style={styles.divider} />
               <h3 style={styles.sectionLabel}>DOD Certifications</h3>
               <div style={styles.certTags}>
-                {activeTech.dodCerts.map(c => (
-                  <span key={c} style={{ ...styles.certTag, background: CERT_COLORS[c] || "#333" }}>{c}</span>
-                ))}
+                {activeTech.dodCerts.map(c => <span key={c} style={{ ...styles.certTag, background: CERT_COLORS[c] || "#333" }}>{c}</span>)}
               </div>
               <h3 style={styles.sectionLabel}>Qualifications</h3>
               <div style={styles.qualGrid}>
@@ -482,295 +341,271 @@ export default function UXOHire() {
         {/* TECH PROFILE CREATION */}
         {view === "techProfile" && (
           <div style={styles.formWrap}>
-          {profileSubmitted ? (
-            <div style={styles.successCard}>
-              <div style={styles.successIcon}>✅</div>
-              <h2 style={styles.successTitle}>Profile Submitted!</h2>
-              <p style={styles.successMsg}>Your profile is now live. Companies searching for qualified UXO techs will be able to find you when you're open to work. Check your email for a confirmation.</p>
-              <button style={styles.btnPrimary} onClick={() => { setProfileSubmitted(false); setView("jobs"); setProfileStep(1); }}>Back to Jobs</button>
-            </div>
-          ) : (
-            <div>
-              <button style={styles.backBtn} onClick={() => setView("jobs")}>← Back</button>
-              <div style={styles.formCard}>
-              <div style={styles.formSteps}>
-                {[1, 2, 3].map(s => (
-                  <div key={s} style={{ ...styles.step, ...(profileStep >= s ? styles.stepActive : {}) }}>{s}</div>
-                ))}
+            {profileSubmitted ? (
+              <div style={styles.successCard}>
+                <div style={styles.successIcon}>✅</div>
+                <h2 style={styles.successTitle}>Profile Submitted!</h2>
+                <p style={styles.successMsg}>Your profile is now live. Companies searching for qualified UXO techs will be able to find you when you're open to work. Check your email for a confirmation.</p>
+                <button style={styles.btnPrimary} onClick={() => { setProfileSubmitted(false); setView("jobs"); setProfileStep(1); }}>Back to Jobs</button>
               </div>
-              <h2 style={styles.formTitle}>
-                {profileStep === 1 && "Basic Information"}
-                {profileStep === 2 && "Qualifications & Certifications"}
-                {profileStep === 3 && "Availability Settings"}
-              </h2>
-
-              {profileStep === 1 && (
-                <div style={styles.formFields}>
-                  <label style={styles.label}>Full Name</label>
-                  <input style={styles.input} placeholder="John Smith" value={profile.name} onChange={e => setProfile(p => ({ ...p, name: e.target.value }))} />
-                <label style={styles.label}>Email Address</label>
-<input style={styles.input} placeholder="you@email.com" type="email" value={profile.email || ""} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} />
-                  <label style={styles.label}>Location (City, State)</label>
-                  <input style={styles.input} placeholder="Dallas, TX" value={profile.location} onChange={e => setProfile(p => ({ ...p, location: e.target.value }))} />
-                  <label style={styles.label}>UXO Hours</label>
-                  <input style={styles.input} placeholder="e.g. 3,500" value={profile.uxoHours} onChange={e => setProfile(p => ({ ...p, uxoHours: e.target.value }))} />
-                  <label style={styles.label}>Geographic Availability</label>
-                  <select style={styles.input} value={profile.travel} onChange={e => setProfile(p => ({ ...p, travel: e.target.value }))}>
-                    {TRAVEL_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <label style={styles.label}>Professional Summary</label>
-                  <textarea style={styles.textarea} placeholder="Brief overview of your UXO background and specialties..." value={profile.summary} onChange={e => setProfile(p => ({ ...p, summary: e.target.value }))} />
-                  <button style={styles.btnPrimary} onClick={() => setProfileStep(2)}>Next →</button>
-                </div>
-              )}
-
-              {profileStep === 2 && (
-                <div style={styles.formFields}>
-
-                  {/* DOD CERT LEVEL */}
-                  <label style={styles.label}>DOD Certification Level (select all that apply)</label>
-                  <div style={styles.certGrid}>
-                    {DOD_CERT_OPTIONS.map(cert => (
-                      <div key={cert} style={{ ...styles.certToggle, ...(profile.dodCerts.includes(cert) ? styles.certToggleActive : {}) }} onClick={() => toggleDodCert(cert)}>
-                        {profile.dodCerts.includes(cert) ? "✓ " : ""}{cert}
-                      </div>
+            ) : (
+              <div>
+                <button style={styles.backBtn} onClick={() => setView("jobs")}>← Back</button>
+                {notifications.length > 0 && (
+                  <div style={styles.notifWrap}>
+                    {notifications.map((n, i) => <div key={i} style={styles.notifBanner}>{n}</div>)}
+                  </div>
+                )}
+                <div style={styles.formCard}>
+                  <div style={styles.formSteps}>
+                    {[1, 2, 3].map(s => (
+                      <div key={s} style={{ ...styles.step, ...(profileStep >= s ? styles.stepActive : {}) }}>{s}</div>
                     ))}
                   </div>
+                  <h2 style={styles.formTitle}>
+                    {profileStep === 1 && "Basic Information"}
+                    {profileStep === 2 && "Qualifications & Certifications"}
+                    {profileStep === 3 && "Availability Settings"}
+                  </h2>
 
-                  {/* HAZWOPER 40-HR */}
-                  <div style={styles.qualBlock}>
-                    <div style={styles.qualRow}>
-                      <span style={styles.qualBlockLabel}>HAZWOPER 40-HR</span>
-                      <div style={styles.yesNoRow}>
-                        <button style={{ ...styles.yesNoBtn, ...(profile.hazwoper40 ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, hazwoper40: true }))}>Yes</button>
-                        <button style={{ ...styles.yesNoBtn, ...(profile.hazwoper40 === false && profile.hazwoper40 !== null ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, hazwoper40: false, hazwoper40Date: "", hazwoper8: false, hazwoper8Date: "" }))}>No</button>
-                      </div>
-                    </div>
-                    {profile.hazwoper40 && (
-                      <div style={styles.subField}>
-                        <label style={styles.label}>Issue Date</label>
-                        <input type="date" style={styles.input} value={profile.hazwoper40Date} onChange={e => setProfile(p => ({ ...p, hazwoper40Date: e.target.value }))} />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 8-HR HAZWOPER - only shows if 40-HR is older than 1 year */}
-                  {show8HrQuestion && (
-                    <div style={styles.qualBlock}>
-                      <div style={styles.qualRow}>
-                        <span style={styles.qualBlockLabel}>8-HR HAZWOPER Refresher</span>
-                        <div style={styles.yesNoRow}>
-                          <button style={{ ...styles.yesNoBtn, ...(profile.hazwoper8 ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, hazwoper8: true }))}>Yes</button>
-                          <button style={{ ...styles.yesNoBtn, ...(!profile.hazwoper8 ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, hazwoper8: false, hazwoper8Date: "" }))}>No</button>
-                        </div>
-                      </div>
-                      {profile.hazwoper8 && (
-                        <div style={styles.subField}>
-                          <label style={styles.label}>Issue Date</label>
-                          <input type="date" style={styles.input} value={profile.hazwoper8Date} onChange={e => setProfile(p => ({ ...p, hazwoper8Date: e.target.value }))} />
-                          {errors.hazwoper8Date && <div style={styles.errorMsg}>⚠️ {errors.hazwoper8Date}</div>}
-                          {isExpiringSoon(profile.hazwoper8Date) && !isExpired(profile.hazwoper8Date) && (
-                            <div style={styles.warnMsg}>⚠️ Your 8-HR HAZWOPER expires within 30 days. Schedule your renewal soon.</div>
-                          )}
-                          <label style={{ ...styles.label, marginTop: 8 }}>Upload 8-HR Cert</label>
-                          <label htmlFor="hazwoper8Upload" style={styles.uploadBox}>
-  <span style={styles.uploadIcon}>📎</span>
-  <p style={styles.uploadText}>Click here to upload 8-HR cert (PDF, JPG, PNG)</p>
-  <input id="hazwoper8Upload" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}} onChange={async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const { path, error } = await uploadFile(file, 'certs');
-      if (error) alert(`Failed to upload ${file.name}`);
-      else alert(`${file.name} uploaded successfully!`);
-    }
-  }} />
-</label>
-                        </div>
-                      )}
+                  {profileStep === 1 && (
+                    <div style={styles.formFields}>
+                      <label style={styles.label}>Full Name</label>
+                      <input style={styles.input} placeholder="John Smith" value={profile.name} onChange={e => setProfile(p => ({ ...p, name: e.target.value }))} />
+                      <label style={styles.label}>Email Address</label>
+                      <input style={styles.input} placeholder="you@email.com" type="email" value={profile.email} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} />
+                      <label style={styles.label}>Location (City, State)</label>
+                      <input style={styles.input} placeholder="Dallas, TX" value={profile.location} onChange={e => setProfile(p => ({ ...p, location: e.target.value }))} />
+                      <label style={styles.label}>UXO Hours</label>
+                      <input style={styles.input} placeholder="e.g. 3,500" value={profile.uxoHours} onChange={e => setProfile(p => ({ ...p, uxoHours: e.target.value }))} />
+                      <label style={styles.label}>Geographic Availability</label>
+                      <select style={styles.input} value={profile.travel} onChange={e => setProfile(p => ({ ...p, travel: e.target.value }))}>
+                        {TRAVEL_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <label style={styles.label}>Professional Summary</label>
+                      <textarea style={styles.textarea} placeholder="Brief overview of your UXO background and specialties..." value={profile.summary} onChange={e => setProfile(p => ({ ...p, summary: e.target.value }))} />
+                      <button style={styles.btnPrimary} onClick={() => setProfileStep(2)}>Next →</button>
                     </div>
                   )}
 
-                  {/* CURRENT PHYSICAL */}
-                  <div style={styles.qualBlock}>
-                    <div style={styles.qualRow}>
-                      <span style={styles.qualBlockLabel}>Current Physical (within 1 year)</span>
-                      <div style={styles.yesNoRow}>
-                        <button style={{ ...styles.yesNoBtn, ...(profile.physicalCurrent ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, physicalCurrent: true }))}>Yes</button>
-                        <button style={{ ...styles.yesNoBtn, ...(!profile.physicalCurrent ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, physicalCurrent: false, physicalDate: "" }))}>No</button>
+                  {profileStep === 2 && (
+                    <div style={styles.formFields}>
+                      <label style={styles.label}>DOD Certification Level (select all that apply)</label>
+                      <div style={styles.certGrid}>
+                        {DOD_CERT_OPTIONS.map(cert => (
+                          <div key={cert} style={{ ...styles.certToggle, ...(profile.dodCerts.includes(cert) ? styles.certToggleActive : {}) }} onClick={() => toggleDodCert(cert)}>
+                            {profile.dodCerts.includes(cert) ? "✓ " : ""}{cert}
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                    {profile.physicalCurrent && (
-                      <div style={styles.subField}>
-                        <label style={styles.label}>Issue Date</label>
-                        <input type="date" style={styles.input} value={profile.physicalDate} onChange={e => setProfile(p => ({ ...p, physicalDate: e.target.value }))} />
-                        {errors.physicalDate && <div style={styles.errorMsg}>⚠️ {errors.physicalDate}</div>}
-                        {isExpiringSoon(profile.physicalDate) && !isExpired(profile.physicalDate) && (
-                          <div style={styles.warnMsg}>⚠️ Your physical expires within 30 days. Schedule your renewal soon.</div>
+
+                      {/* HAZWOPER 40-HR */}
+                      <div style={styles.qualBlock}>
+                        <div style={styles.qualRow}>
+                          <span style={styles.qualBlockLabel}>HAZWOPER 40-HR</span>
+                          <div style={styles.yesNoRow}>
+                            <button style={{ ...styles.yesNoBtn, ...(profile.hazwoper40 ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, hazwoper40: true }))}>Yes</button>
+                            <button style={{ ...styles.yesNoBtn, ...(!profile.hazwoper40 ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, hazwoper40: false, hazwoper40Date: "", hazwoper8: false, hazwoper8Date: "" }))}>No</button>
+                          </div>
+                        </div>
+                        {profile.hazwoper40 && (
+                          <div style={styles.subField}>
+                            <label style={styles.label}>Issue Date</label>
+                            <input type="date" style={styles.input} value={profile.hazwoper40Date} onChange={e => setProfile(p => ({ ...p, hazwoper40Date: e.target.value }))} />
+                          </div>
                         )}
-                        <label style={{ ...styles.label, marginTop: 8 }}>Upload Physical</label>
-                        <label htmlFor="physicalUpload" style={styles.uploadBox}>
-  <span style={styles.uploadIcon}>📎</span>
-  <p style={styles.uploadText}>Click here to upload physical (PDF, JPG, PNG)</p>
-  <input id="physicalUpload" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}} onChange={async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const { path, error } = await uploadFile(file, 'physicals');
-      if (error) alert(`Failed to upload ${file.name}`);
-      else alert(`${file.name} uploaded successfully!`);
-    }
-  }} />
-</label>
                       </div>
-                    )}
-                  </div>
 
-                  {/* MILITARY/EOD */}
-                  <div style={styles.qualBlock}>
-                    <div style={styles.qualRow}>
-                      <span style={styles.qualBlockLabel}>Military / EOD Background</span>
-                      <div style={styles.yesNoRow}>
-                        <button style={{ ...styles.yesNoBtn, ...(profile.militaryEod ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, militaryEod: true }))}>Yes</button>
-                        <button style={{ ...styles.yesNoBtn, ...(!profile.militaryEod ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, militaryEod: false }))}>No</button>
+                      {/* 8-HR HAZWOPER */}
+                      {show8HrQuestion && (
+                        <div style={styles.qualBlock}>
+                          <div style={styles.qualRow}>
+                            <span style={styles.qualBlockLabel}>8-HR HAZWOPER Refresher</span>
+                            <div style={styles.yesNoRow}>
+                              <button style={{ ...styles.yesNoBtn, ...(profile.hazwoper8 ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, hazwoper8: true }))}>Yes</button>
+                              <button style={{ ...styles.yesNoBtn, ...(!profile.hazwoper8 ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, hazwoper8: false, hazwoper8Date: "" }))}>No</button>
+                            </div>
+                          </div>
+                          {profile.hazwoper8 && (
+                            <div style={styles.subField}>
+                              <label style={styles.label}>Issue Date</label>
+                              <input type="date" style={styles.input} value={profile.hazwoper8Date} onChange={e => setProfile(p => ({ ...p, hazwoper8Date: e.target.value }))} />
+                              {errors.hazwoper8Date && <div style={styles.errorMsg}>⚠️ {errors.hazwoper8Date}</div>}
+                              {isExpiringSoon(profile.hazwoper8Date) && !isExpired(profile.hazwoper8Date) && <div style={styles.warnMsg}>⚠️ Your 8-HR HAZWOPER expires within 30 days.</div>}
+                              <label style={{ ...styles.label, marginTop: 8 }}>Upload 8-HR Cert</label>
+                              <label htmlFor="hazwoper8Upload" style={styles.uploadBox}>
+                                <span style={styles.uploadIcon}>📎</span>
+                                <p style={styles.uploadText}>Click here to upload 8-HR cert (PDF, JPG, PNG)</p>
+                                <input id="hazwoper8Upload" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: "none" }} onChange={async (e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    const { error } = await uploadFile(file, 'certs');
+                                    if (error) alert(`Failed to upload ${file.name}`);
+                                    else alert(`${file.name} uploaded successfully!`);
+                                  }
+                                }} />
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* CURRENT PHYSICAL */}
+                      <div style={styles.qualBlock}>
+                        <div style={styles.qualRow}>
+                          <span style={styles.qualBlockLabel}>Current Physical (within 1 year)</span>
+                          <div style={styles.yesNoRow}>
+                            <button style={{ ...styles.yesNoBtn, ...(profile.physicalCurrent ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, physicalCurrent: true }))}>Yes</button>
+                            <button style={{ ...styles.yesNoBtn, ...(!profile.physicalCurrent ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, physicalCurrent: false, physicalDate: "" }))}>No</button>
+                          </div>
+                        </div>
+                        {profile.physicalCurrent && (
+                          <div style={styles.subField}>
+                            <label style={styles.label}>Issue Date</label>
+                            <input type="date" style={styles.input} value={profile.physicalDate} onChange={e => setProfile(p => ({ ...p, physicalDate: e.target.value }))} />
+                            {errors.physicalDate && <div style={styles.errorMsg}>⚠️ {errors.physicalDate}</div>}
+                            {isExpiringSoon(profile.physicalDate) && !isExpired(profile.physicalDate) && <div style={styles.warnMsg}>⚠️ Your physical expires within 30 days.</div>}
+                            <label style={{ ...styles.label, marginTop: 8 }}>Upload Physical</label>
+                            <label htmlFor="physicalUpload" style={styles.uploadBox}>
+                              <span style={styles.uploadIcon}>📎</span>
+                              <p style={styles.uploadText}>Click here to upload physical (PDF, JPG, PNG)</p>
+                              <input id="physicalUpload" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: "none" }} onChange={async (e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  const { error } = await uploadFile(file, 'physicals');
+                                  if (error) alert(`Failed to upload ${file.name}`);
+                                  else alert(`${file.name} uploaded successfully!`);
+                                }
+                              }} />
+                            </label>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* MILITARY/EOD */}
+                      <div style={styles.qualBlock}>
+                        <div style={styles.qualRow}>
+                          <span style={styles.qualBlockLabel}>Military / EOD Background</span>
+                          <div style={styles.yesNoRow}>
+                            <button style={{ ...styles.yesNoBtn, ...(profile.militaryEod ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, militaryEod: true }))}>Yes</button>
+                            <button style={{ ...styles.yesNoBtn, ...(!profile.militaryEod ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, militaryEod: false }))}>No</button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* SECURITY CLEARANCE */}
+                      <div style={styles.qualBlock}>
+                        <div style={styles.qualRow}>
+                          <span style={styles.qualBlockLabel}>Security Clearance</span>
+                          <div style={styles.yesNoRow}>
+                            <button style={{ ...styles.yesNoBtn, ...(profile.clearance ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, clearance: true }))}>Yes</button>
+                            <button style={{ ...styles.yesNoBtn, ...(!profile.clearance ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, clearance: false, clearanceLevel: "" }))}>No</button>
+                          </div>
+                        </div>
+                        {profile.clearance && (
+                          <div style={styles.subField}>
+                            <label style={styles.label}>Clearance Level</label>
+                            <input style={styles.input} placeholder="e.g. Secret, TS, TS/SCI" value={profile.clearanceLevel} onChange={e => setProfile(p => ({ ...p, clearanceLevel: e.target.value }))} />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* DIVE CERT */}
+                      <div style={styles.qualBlock}>
+                        <div style={styles.qualRow}>
+                          <span style={styles.qualBlockLabel}>Dive Certified</span>
+                          <div style={styles.yesNoRow}>
+                            <button style={{ ...styles.yesNoBtn, ...(profile.diveCert ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, diveCert: true }))}>Yes</button>
+                            <button style={{ ...styles.yesNoBtn, ...(!profile.diveCert ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, diveCert: false }))}>No</button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* DRIVERS LICENSE */}
+                      <div style={styles.qualBlock}>
+                        <div style={styles.qualRow}>
+                          <span style={styles.qualBlockLabel}>Driver's License</span>
+                          <div style={styles.yesNoRow}>
+                            <button style={{ ...styles.yesNoBtn, ...(profile.driversLicense ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, driversLicense: true }))}>Yes</button>
+                            <button style={{ ...styles.yesNoBtn, ...(!profile.driversLicense ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, driversLicense: false }))}>No</button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* CDL */}
+                      <div style={styles.qualBlock}>
+                        <div style={styles.qualRow}>
+                          <span style={styles.qualBlockLabel}>CDL</span>
+                          <div style={styles.yesNoRow}>
+                            <button style={{ ...styles.yesNoBtn, ...(profile.cdl ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, cdl: true }))}>Yes</button>
+                            <button style={{ ...styles.yesNoBtn, ...(!profile.cdl ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, cdl: false }))}>No</button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* CERT UPLOADS */}
+                      <label style={styles.label}>Upload Certification Documents</label>
+                      <label htmlFor="certUpload" style={styles.uploadBox}>
+                        <span style={styles.uploadIcon}>📎</span>
+                        <p style={styles.uploadText}>Click here to upload certs (PDF, JPG, PNG)</p>
+                        <p style={styles.uploadSub}>Max 10MB each</p>
+                        <input id="certUpload" type="file" accept=".pdf,.jpg,.jpeg,.png" multiple style={{ display: "none" }} onChange={async (e) => {
+                          const files = Array.from(e.target.files);
+                          for (const file of files) {
+                            const { error } = await uploadFile(file, 'certs');
+                            if (error) alert(`Failed to upload ${file.name}`);
+                            else alert(`${file.name} uploaded successfully!`);
+                          }
+                        }} />
+                      </label>
+
+                      <label style={styles.label}>Upload Resume</label>
+                      <label htmlFor="resumeUpload" style={styles.uploadBox}>
+                        <span style={styles.uploadIcon}>📄</span>
+                        <p style={styles.uploadText}>Click here to upload resume (PDF, Word)</p>
+                        <p style={styles.uploadSub}>Max 10MB</p>
+                        <input id="resumeUpload" type="file" accept=".pdf,.doc,.docx" style={{ display: "none" }} onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const { error } = await uploadFile(file, 'resumes');
+                            if (error) alert(`Failed to upload ${file.name}`);
+                            else alert(`${file.name} uploaded successfully!`);
+                          }
+                        }} />
+                      </label>
+
+                      <div style={styles.formRow}>
+                        <button style={styles.btnSecondary} onClick={() => setProfileStep(1)}>← Back</button>
+                        <button style={styles.btnPrimary} onClick={() => { if (validateStep2()) setProfileStep(3); }}>Next →</button>
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* SECURITY CLEARANCE */}
-                  <div style={styles.qualBlock}>
-                    <div style={styles.qualRow}>
-                      <span style={styles.qualBlockLabel}>Security Clearance</span>
-                      <div style={styles.yesNoRow}>
-                        <button style={{ ...styles.yesNoBtn, ...(profile.clearance ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, clearance: true }))}>Yes</button>
-                        <button style={{ ...styles.yesNoBtn, ...(!profile.clearance ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, clearance: false, clearanceLevel: "" }))}>No</button>
+                  {profileStep === 3 && (
+                    <div style={styles.formFields}>
+                      <label style={styles.label}>Job Availability</label>
+                      <div style={styles.toggleRow}>
+                        <div style={styles.toggleInfo}>
+                          <div style={styles.toggleTitle}>Open to Work</div>
+                          <div style={styles.toggleSub}>When active, companies can find and contact you for opportunities.</div>
+                        </div>
+                        <div style={{ ...styles.toggleSwitch, background: openToWork ? "#d97706" : "#333" }} onClick={() => setOpenToWork(o => !o)}>
+                          <div style={{ ...styles.toggleKnob, transform: openToWork ? "translateX(24px)" : "translateX(0)" }} />
+                        </div>
+                      </div>
+                      <div style={styles.availNote}>
+                        {openToWork ? "✅ Your profile will be visible to hiring companies." : "🔒 Your profile is hidden from company searches."}
+                      </div>
+                      <div style={styles.formRow}>
+                        <button style={styles.btnSecondary} onClick={() => setProfileStep(2)}>← Back</button>
+                        <button style={styles.btnPrimary} onClick={handleSubmitProfile}>Submit Profile ✓</button>
                       </div>
                     </div>
-                    {profile.clearance && (
-                      <div style={styles.subField}>
-                        <label style={styles.label}>Clearance Level</label>
-                        <input style={styles.input} placeholder="e.g. Secret, TS, TS/SCI" value={profile.clearanceLevel} onChange={e => setProfile(p => ({ ...p, clearanceLevel: e.target.value }))} />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* DIVE CERT */}
-                  <div style={styles.qualBlock}>
-                    <div style={styles.qualRow}>
-                      <span style={styles.qualBlockLabel}>Dive Certified</span>
-                      <div style={styles.yesNoRow}>
-                        <button style={{ ...styles.yesNoBtn, ...(profile.diveCert ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, diveCert: true }))}>Yes</button>
-                        <button style={{ ...styles.yesNoBtn, ...(!profile.diveCert ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, diveCert: false }))}>No</button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* DRIVERS LICENSE */}
-                  <div style={styles.qualBlock}>
-                    <div style={styles.qualRow}>
-                      <span style={styles.qualBlockLabel}>Driver's License</span>
-                      <div style={styles.yesNoRow}>
-                        <button style={{ ...styles.yesNoBtn, ...(profile.driversLicense ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, driversLicense: true }))}>Yes</button>
-                        <button style={{ ...styles.yesNoBtn, ...(!profile.driversLicense ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, driversLicense: false }))}>No</button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* CDL */}
-                  <div style={styles.qualBlock}>
-                    <div style={styles.qualRow}>
-                      <span style={styles.qualBlockLabel}>CDL</span>
-                      <div style={styles.yesNoRow}>
-                        <button style={{ ...styles.yesNoBtn, ...(profile.cdl ? styles.yesNoBtnActive : {}) }} onClick={() => setProfile(p => ({ ...p, cdl: true }))}>Yes</button>
-                        <button style={{ ...styles.yesNoBtn, ...(!profile.cdl ? styles.yesNoBtnNo : {}) }} onClick={() => setProfile(p => ({ ...p, cdl: false }))}>No</button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* CERT UPLOADS */}
-                 <label style={styles.label}>Upload Certification Documents</label>
-<label htmlFor="certUpload" style={styles.uploadBox}>
-  <span style={styles.uploadIcon}>📎</span>
-  <p style={styles.uploadText}>Click here to upload certs (PDF, JPG, PNG)</p>
-  <p style={styles.uploadSub}>Max 10MB each</p>
-  <input id="certUpload" type="file" accept=".pdf,.jpg,.jpeg,.png" multiple style={{display:"none"}} onChange={async (e) => {
-    const files = Array.from(e.target.files);
-    for (const file of files) {
-      const { path, error } = await uploadFile(file, 'certs');
-      if (error) alert(`Failed to upload ${file.name}`);
-      else alert(`${file.name} uploaded successfully!`);
-    }
-  }} />
-</label>
-
-<label style={styles.label}>Upload Resume</label>
-<label htmlFor="resumeUpload" style={styles.uploadBox}>
-  <span style={styles.uploadIcon}>📄</span>
-  <p style={styles.uploadText}>Click here to upload resume (PDF, Word)</p>
-  <p style={styles.uploadSub}>Max 10MB</p>
-  <input id="resumeUpload" type="file" accept=".pdf,.doc,.docx" style={{display:"none"}} onChange={async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const { path, error } = await uploadFile(file, 'resumes');
-      if (error) alert(`Failed to upload ${file.name}`);
-      else alert(`${file.name} uploaded successfully!`);
-    }
-  }} />
-</label>
-
-                  <div style={styles.formRow}>
-                    <button style={styles.btnSecondary} onClick={() => setProfileStep(1)}>← Back</button>
-                    <button style={styles.btnPrimary} onClick={() => { if (validateStep2()) setProfileStep(3); }}>Next →</button>
-                  </div>
+                  )}
                 </div>
-              )}
-
-              {profileStep === 3 && (
-                <div style={styles.formFields}>
-                  <label style={styles.label}>Job Availability</label>
-                  <div style={styles.toggleRow}>
-                    <div style={styles.toggleInfo}>
-                      <div style={styles.toggleTitle}>Open to Work</div>
-                      <div style={styles.toggleSub}>When active, companies can find and contact you for opportunities.</div>
-                    </div>
-                    <div style={{ ...styles.toggleSwitch, background: openToWork ? "#d97706" : "#333" }} onClick={() => setOpenToWork(o => !o)}>
-                      <div style={{ ...styles.toggleKnob, transform: openToWork ? "translateX(24px)" : "translateX(0)" }} />
-                    </div>
-                  </div>
-                  <div style={styles.availNote}>
-                    {openToWork ? "✅ Your profile will be visible to hiring companies." : "🔒 Your profile is hidden from company searches."}
-                  </div>
-                  <div style={styles.formRow}>
-                    <button style={styles.btnSecondary} onClick={() => setProfileStep(2)}>← Back</button>
-                    <button style={styles.btnPrimary} onClick={async () => {
-                      const { error } = await supabaseInsert('tech_profiles', {
-                        name: profile.name,
-                        location: profile.location,
-                        uxo_hours: profile.uxoHours,
-                        travel: profile.travel,
-                        summary: profile.summary,
-                        dod_certs: profile.dodCerts,
-                        hazwoper_40: profile.hazwoper40,
-                        hazwoper_40_date: profile.hazwoper40Date || null,
-                        hazwoper_8: profile.hazwoper8,
-                        hazwoper_8_date: profile.hazwoper8Date || null,
-                        physical_current: profile.physicalCurrent,
-                        physical_date: profile.physicalDate || null,
-                        military_eod: profile.militaryEod,
-                        clearance: profile.clearance,
-                        clearance_level: profile.clearanceLevel,
-                        dive_cert: profile.diveCert,
-                        drivers_license: profile.driversLicense,
-                        cdl: profile.cdl,
-                        open_to_work: openToWork
-                      });
-                      if (error) { alert("Something went wrong. Please try again."); }
-                      else { setProfileSubmitted(true); }
-                    }}>Submit Profile ✓</button>
-                 </div>
               </div>
             )}
-            </div>
           </div>
-          )}
         )}
 
         {/* POST A JOB */}
@@ -814,19 +649,13 @@ export default function UXOHire() {
 
               {postStep === 2 && (
                 <div style={styles.formFields}>
-                  <p style={styles.certInstructions}>For each qualification, select <span style={{ color: "#8B0000" }}>Required</span> or <span style={{ color: "#1a3a5a", background: "#1a3a5a", padding: "1px 6px", borderRadius: 3, color: "#7ab3d4" }}>Preferred</span> — or leave unselected if not relevant.</p>
+                  <p style={styles.certInstructions}>For each qualification, select Required or Preferred — or leave unselected if not relevant.</p>
                   {ALL_CERT_OPTIONS.map(cert => (
                     <div key={cert} style={styles.certRequireRow}>
                       <span style={styles.certRequireLabel}>{cert}</span>
                       <div style={styles.yesNoRow}>
-                        <button
-                          style={{ ...styles.reqBtn, ...(jobPost.requiredCerts.includes(cert) ? styles.reqBtnRequired : {}) }}
-                          onClick={() => toggleJobCert(cert, 'required')}
-                        >Required</button>
-                        <button
-                          style={{ ...styles.reqBtn, ...(jobPost.preferredCerts.includes(cert) ? styles.reqBtnPreferred : {}) }}
-                          onClick={() => toggleJobCert(cert, 'preferred')}
-                        >Preferred</button>
+                        <button style={{ ...styles.reqBtn, ...(jobPost.requiredCerts.includes(cert) ? styles.reqBtnRequired : {}) }} onClick={() => toggleJobCert(cert, 'required')}>Required</button>
+                        <button style={{ ...styles.reqBtn, ...(jobPost.preferredCerts.includes(cert) ? styles.reqBtnPreferred : {}) }} onClick={() => toggleJobCert(cert, 'preferred')}>Preferred</button>
                       </div>
                     </div>
                   ))}
@@ -860,9 +689,7 @@ export default function UXOHire() {
                   </div>
                   <div style={styles.formRow}>
                     <button style={styles.btnSecondary} onClick={() => setPostStep(2)}>← Back</button>
-                    <button style={styles.btnPrimary} onClick={() => {
-                      window.location.href = STRIPE_PAYMENT_LINK;
-                    }}>Pay & Post Job →</button>
+                    <button style={styles.btnPrimary} onClick={() => { window.location.href = STRIPE_PAYMENT_LINK; }}>Pay & Post Job →</button>
                   </div>
                 </div>
               )}
@@ -895,7 +722,7 @@ const styles = {
   navLinkActive: { background: "none", border: "none", color: "#e8e4dc", cursor: "pointer", padding: "8px 14px", fontSize: 15, borderRadius: 6, fontFamily: "inherit", fontWeight: "bold" },
   navCTA: { background: "#d97706", border: "none", color: "#0d0f10", cursor: "pointer", padding: "8px 18px", fontSize: 14, borderRadius: 6, fontWeight: "bold", fontFamily: "inherit", marginLeft: 8 },
   main: { flex: 1, maxWidth: 1100, margin: "0 auto", padding: "0 24px 60px", width: "100%", boxSizing: "border-box" },
-  notifWrap: { margin: "16px 0 0" },
+  notifWrap: { margin: "0 0 16px" },
   notifBanner: { background: "#2a1a08", border: "1px solid #d97706", borderRadius: 8, padding: "12px 16px", fontSize: 14, color: "#d97706", marginBottom: 8 },
   hero: { padding: "72px 0 48px", borderBottom: "1px solid #1e2022", marginBottom: 36 },
   heroBadge: { display: "inline-block", background: "#1a1408", border: "1px solid #3a2a08", color: "#d97706", fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 12px", borderRadius: 20, marginBottom: 20 },
@@ -943,6 +770,10 @@ const styles = {
   pageSub: { fontSize: 15, color: "#7a7570", margin: 0 },
   inlineLink: { color: "#d97706", textDecoration: "none" },
   formWrap: { paddingTop: 32, maxWidth: 640 },
+  successCard: { background: "#111316", border: "1px solid #1e2022", borderRadius: 12, padding: "48px 40px", textAlign: "center", maxWidth: 480, marginTop: 32 },
+  successIcon: { fontSize: 48, marginBottom: 16 },
+  successTitle: { fontSize: 28, fontWeight: "bold", margin: "0 0 16px", letterSpacing: "-0.5px" },
+  successMsg: { fontSize: 15, color: "#9a9490", lineHeight: 1.7, margin: "0 0 28px" },
   formCard: { background: "#111316", border: "1px solid #1e2022", borderRadius: 12, padding: "36px 40px" },
   formSteps: { display: "flex", gap: 8, marginBottom: 28 },
   step: { width: 30, height: 30, borderRadius: "50%", background: "#1e2022", color: "#555", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: "bold" },
@@ -965,7 +796,7 @@ const styles = {
   subField: { paddingTop: 8, display: "flex", flexDirection: "column", gap: 8 },
   errorMsg: { background: "#2a0a0a", border: "1px solid #8B0000", borderRadius: 6, padding: "8px 12px", fontSize: 13, color: "#ff6b6b" },
   warnMsg: { background: "#2a1a08", border: "1px solid #d97706", borderRadius: 6, padding: "8px 12px", fontSize: 13, color: "#d97706" },
-  uploadBox: { border: "2px dashed #2a2c2e", borderRadius: 8, padding: "20px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, position: "relative", cursor: "pointer" },
+  uploadBox: { border: "2px dashed #2a2c2e", borderRadius: 8, padding: "20px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" },
   uploadIcon: { fontSize: 24 },
   uploadText: { fontSize: 13, color: "#8a8580", margin: 0 },
   uploadSub: { fontSize: 12, color: "#555", margin: "0 0 8px" },
@@ -994,9 +825,4 @@ const styles = {
   footer: { borderTop: "1px solid #1a1c1e", padding: "24px" },
   footerInner: { maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: 16 },
   footerSub: { fontSize: 13, color: "#555" },
-  fileInput: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" },
- successCard: { background: "#111316", border: "1px solid #1e2022", borderRadius: 12, padding: "48px 40px", textAlign: "center", maxWidth: 480 },
-successIcon: { fontSize: 48, marginBottom: 16 },
-successTitle: { fontSize: 28, fontWeight: "bold", margin: "0 0 16px", letterSpacing: "-0.5px" },
-successMsg: { fontSize: 15, color: "#9a9490", lineHeight: 1.7, margin: "0 0 28px" }, 
 };
