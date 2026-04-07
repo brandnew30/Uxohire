@@ -135,6 +135,8 @@ export default function UXOHire() {
   });
 
   const handleSubmitProfile = async () => {
+    console.log("Submit clicked");
+    console.log("Profile data:", profile);
     const { error } = await supabaseInsert('tech_profiles', {
       name: profile.name, email: profile.email, location: profile.location,
       uxo_hours: profile.uxoHours, travel: profile.travel, summary: profile.summary,
@@ -146,10 +148,10 @@ export default function UXOHire() {
       dive_cert: profile.diveCert, drivers_license: profile.driversLicense,
       cdl: profile.cdl, open_to_work: openToWork
     });
+    console.log("Insert error:", error);
     if (error) { alert("Something went wrong. Please try again."); }
     else { setProfileSubmitted(true); }
   };
-
   return (
     <div style={styles.root}>
       <nav style={styles.nav}>
