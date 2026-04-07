@@ -166,6 +166,7 @@ export default function UXOHire() {
   const [filterCert, setFilterCert] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
   const [notifications, setNotifications] = useState([]);
+  const [profileSubmitted, setProfileSubmitted] = useState(false);
 
   const [profile, setProfile] = useState({
     name: "",
@@ -481,6 +482,14 @@ export default function UXOHire() {
         {/* TECH PROFILE CREATION */}
         {view === "techProfile" && (
           <div style={styles.formWrap}>
+          {profileSubmitted ? (
+  <div style={styles.successCard}>
+    <div style={styles.successIcon}>✅</div>
+    <h2 style={styles.successTitle}>Profile Submitted!</h2>
+    <p style={styles.successMsg}>Your profile is now live. Companies searching for qualified UXO techs will be able to find you when you're open to work. Check your email for a confirmation.</p>
+    <button style={styles.btnPrimary} onClick={() => { setProfileSubmitted(false); setView("jobs"); setProfileStep(1); }}>Back to Jobs</button>
+  </div>
+) : (
             <button style={styles.backBtn} onClick={() => setView("jobs")}>← Back</button>
             <div style={styles.formCard}>
               <div style={styles.formSteps}>
@@ -753,13 +762,14 @@ export default function UXOHire() {
                         open_to_work: openToWork
                       });
                       if (error) { alert("Something went wrong. Please try again."); }
-                      else { setView("techs"); setProfileStep(1); }
+                      else { setProfileSubmitted(true); }
                     }}>Submit Profile ✓</button>
                   </div>
                 </div>
               )}
             </div>
           </div>
+         )}
         )}
 
         {/* POST A JOB */}
@@ -984,4 +994,8 @@ const styles = {
   footerInner: { maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: 16 },
   footerSub: { fontSize: 13, color: "#555" },
   fileInput: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" },
+ successCard: { background: "#111316", border: "1px solid #1e2022", borderRadius: 12, padding: "48px 40px", textAlign: "center", maxWidth: 480 },
+successIcon: { fontSize: 48, marginBottom: 16 },
+successTitle: { fontSize: 28, fontWeight: "bold", margin: "0 0 16px", letterSpacing: "-0.5px" },
+successMsg: { fontSize: 15, color: "#9a9490", lineHeight: 1.7, margin: "0 0 28px" }, 
 };
