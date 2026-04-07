@@ -149,8 +149,13 @@ export default function UXOHire() {
       cdl: profile.cdl, open_to_work: openToWork
     });
     console.log("Insert error:", error);
-    if (error) { alert("Something went wrong. Please try again."); }
-    else { setProfileSubmitted(true); }
+    if (error) { 
+      alert("Something went wrong. Please try again."); 
+    } else { 
+      console.log("Setting profile submitted to true");
+      setProfileSubmitted(true);
+      alert("Profile submitted successfully! Click OK to see confirmation.");
+    }
   };
   return (
     <div style={styles.root}>
