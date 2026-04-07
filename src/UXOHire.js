@@ -152,9 +152,8 @@ export default function UXOHire() {
     if (error) { 
       alert("Something went wrong. Please try again."); 
     } else { 
-      console.log("Setting profile submitted to true");
+      setView("techProfile");
       setProfileSubmitted(true);
-      alert("Profile submitted successfully! Click OK to see confirmation.");
     }
   };
   return (
