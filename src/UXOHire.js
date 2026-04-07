@@ -483,15 +483,16 @@ export default function UXOHire() {
         {view === "techProfile" && (
           <div style={styles.formWrap}>
           {profileSubmitted ? (
-  <div style={styles.successCard}>
-    <div style={styles.successIcon}>✅</div>
-    <h2 style={styles.successTitle}>Profile Submitted!</h2>
-    <p style={styles.successMsg}>Your profile is now live. Companies searching for qualified UXO techs will be able to find you when you're open to work. Check your email for a confirmation.</p>
-    <button style={styles.btnPrimary} onClick={() => { setProfileSubmitted(false); setView("jobs"); setProfileStep(1); }}>Back to Jobs</button>
-  </div>
-) : (
-            <button style={styles.backBtn} onClick={() => setView("jobs")}>← Back</button>
-            <div style={styles.formCard}>
+            <div style={styles.successCard}>
+              <div style={styles.successIcon}>✅</div>
+              <h2 style={styles.successTitle}>Profile Submitted!</h2>
+              <p style={styles.successMsg}>Your profile is now live. Companies searching for qualified UXO techs will be able to find you when you're open to work. Check your email for a confirmation.</p>
+              <button style={styles.btnPrimary} onClick={() => { setProfileSubmitted(false); setView("jobs"); setProfileStep(1); }}>Back to Jobs</button>
+            </div>
+          ) : (
+            <div>
+              <button style={styles.backBtn} onClick={() => setView("jobs")}>← Back</button>
+              <div style={styles.formCard}>
               <div style={styles.formSteps}>
                 {[1, 2, 3].map(s => (
                   <div key={s} style={{ ...styles.step, ...(profileStep >= s ? styles.stepActive : {}) }}>{s}</div>
@@ -764,12 +765,12 @@ export default function UXOHire() {
                       if (error) { alert("Something went wrong. Please try again."); }
                       else { setProfileSubmitted(true); }
                     }}>Submit Profile ✓</button>
-                  </div>
-                </div>
-              )}
+                 </div>
+              </div>
+            )}
             </div>
           </div>
-         )}
+          )}
         )}
 
         {/* POST A JOB */}
