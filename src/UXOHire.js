@@ -148,8 +148,7 @@ export default function UXOHire() {
   useEffect(() => {
     if (user) fetchMyProfile();
     else setMyProfile(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user]); // eslint-disable-line
 
   const show8HrQuestion = profile.hazwoper40 && isOlderThanOneYear(profile.hazwoper40Date);
 
