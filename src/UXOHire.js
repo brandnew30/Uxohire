@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 
 // Stripe integration pending — job posts saved as pending_payment
@@ -20,6 +21,7 @@ const normalizeJob = (j) => ({
 const normalizeTech = (t) => ({
   id: t.id,
   name: t.name,
+  email: t.email || '',
   location: t.location,
   uxoHours: t.uxo_hours || '0',
   travel: t.travel,
@@ -35,6 +37,10 @@ const normalizeTech = (t) => ({
   cdl: t.cdl,
   available: t.open_to_work,
   summary: t.summary || '',
+  resumePath: t.resume_path || null,
+  certPaths: t.cert_paths || [],
+  hazwoper8CertPath: t.hazwoper8_cert_path || null,
+  physicalCertPath: t.physical_cert_path || null,
 });
 
 const isExpired = (dateStr) => {
@@ -66,8 +72,37 @@ const ALL_CERT_OPTIONS = [
   "Dive Certified", "Driver's License", "CDL", "Military/EOD Background",
 ];
 
-export default function UXOHire() {
-  const [view, setView] = useState("jobs");
+export default function UXOHire({ user: userProp }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Derive view from URL path
+  const pathToView = {
+    '/': 'jobs',
+    '/techs': 'techs',
+    '/post-job': 'postJob',
+    '/create-profile': 'techProfile',
+    '/login': 'login',
+    '/signup': 'signup',
+    '/my-profile': 'myProfile',
+    '/job-post-success': 'jobPostSuccess',
+    // /dashboard is handled by App.js routing, not UXOHire
+  };
+  const view = pathToView[location.pathname] || 'jobs';
+  const setView = (v) => {
+    const viewToPath = {
+      jobs: '/',
+      techs: '/techs',
+      postJob: '/post-job',
+      techProfile: '/create-profile',
+      login: '/login',
+      signup: '/signup',
+      myProfile: '/my-profile',
+      jobPostSuccess: '/job-post-success',
+    };
+    navigate(viewToPath[v] || '/');
+  };
+
   const [activeJob, setActiveJob] = useState(null);
   const [activeTech, setActiveTech] = useState(null);
   const [openToWork, setOpenToWork] = useState(true);
@@ -82,15 +117,38 @@ export default function UXOHire() {
   const [techs, setTechs] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
 
-  // Auth state
-  const [user, setUser] = useState(null);
+  // Auth state — driven by prop from App (single source of truth)
+  const [user, setUser] = useState(userProp ?? null);
   const [authForm, setAuthForm] = useState({ email: '', password: '' });
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [authSuccessMsg, setAuthSuccessMsg] = useState('');
 
   // My Profile state
   const [myProfile, setMyProfile] = useState(null);
   const [myProfileLoading, setMyProfileLoading] = useState(false);
+
+  // Apply Now state
+  const [applyView, setApplyView] = useState(false);
+  const [applyForm, setApplyForm] = useState({ name: '', email: '', message: '' });
+  const [applySubmitting, setApplySubmitting] = useState(false);
+  const [applySuccess, setApplySuccess] = useState(false);
+  const [applyError, setApplyError] = useState('');
+
+  // Contact This Tech state
+  const [contactView, setContactView] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: '', email: '', company: '', message: '' });
+  const [contactSubmitting, setContactSubmitting] = useState(false);
+  const [contactSuccess, setContactSuccess] = useState(false);
+  const [contactError, setContactError] = useState('');
+
+  // Upload status state
+  const [uploadStatus, setUploadStatus] = useState({});
+  // Upload paths — collected during form, saved to DB on submit
+  const [uploadPaths, setUploadPaths] = useState({ resume: null, certs: [], hazwoper8: null, physical: null });
+
+  // Submit error state (profile / job post)
+  const [submitError, setSubmitError] = useState('');
 
   const [profile, setProfile] = useState({
     name: "", email: "", location: "", uxoHours: "", travel: "Nationwide", summary: "",
@@ -104,16 +162,8 @@ export default function UXOHire() {
     requiredCerts: [], preferredCerts: [],
   });
 
-  // Auth session init and listener
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  // Sync user from parent App when prop changes (login/logout)
+  useEffect(() => { setUser(userProp ?? null); }, [userProp]);
 
   useEffect(() => {
     const notes = [];
@@ -177,6 +227,7 @@ export default function UXOHire() {
   });
 
   const handleSubmitProfile = async () => {
+    setSubmitError('');
     const profileData = {
       name: profile.name, email: profile.email, location: profile.location,
       uxo_hours: profile.uxoHours, travel: profile.travel, summary: profile.summary,
@@ -187,11 +238,16 @@ export default function UXOHire() {
       clearance: profile.clearance, clearance_level: profile.clearanceLevel,
       dive_cert: profile.diveCert, drivers_license: profile.driversLicense,
       cdl: profile.cdl, open_to_work: openToWork,
+      // Persist upload paths collected during form steps
+      resume_path: uploadPaths.resume || null,
+      cert_paths: uploadPaths.certs || [],
+      hazwoper8_cert_path: uploadPaths.hazwoper8 || null,
+      physical_cert_path: uploadPaths.physical || null,
       ...(user ? { user_id: user.id } : {}),
     };
     const { error } = await supabase.from('tech_profiles').insert(profileData);
     if (error) {
-      alert("Something went wrong saving your profile. Please try again.");
+      setSubmitError("Something went wrong saving your profile. Please try again.");
     } else {
       setView("techProfile");
       setProfileSubmitted(true);
@@ -222,7 +278,7 @@ export default function UXOHire() {
       ...(user ? { user_id: user.id } : {}),
     });
     if (error) {
-      alert("Something went wrong. Please try again.");
+      setSubmitError("Something went wrong. Please try again.");
     } else {
       setView("jobPostSuccess");
       // Refresh jobs
@@ -244,8 +300,8 @@ export default function UXOHire() {
       setAuthError(error.message);
     } else {
       setAuthError('');
+      setAuthSuccessMsg('Account created! Check your email to confirm your account, then log in.');
       setView('jobs');
-      alert('Account created! Check your email to confirm your account, then log in.');
     }
   };
 
@@ -260,8 +316,14 @@ export default function UXOHire() {
     if (error) {
       setAuthError(error.message);
     } else {
-      setView('jobs');
       setAuthForm({ email: '', password: '' });
+      // Honour returnTo from navigation state (e.g. /dashboard redirect)
+      const returnTo = location.state?.returnTo;
+      if (returnTo) {
+        navigate(returnTo, { replace: true });
+      } else {
+        setView('jobs');
+      }
     }
   };
 
@@ -299,6 +361,50 @@ export default function UXOHire() {
     }
   };
 
+  const handleApply = async () => {
+    if (!applyForm.name || !applyForm.email) {
+      setApplyError('Name and email are required.');
+      return;
+    }
+    setApplySubmitting(true);
+    setApplyError('');
+    const { error } = await supabase.from('applications').insert({
+      job_id: activeJob.id,
+      applicant_name: applyForm.name,
+      applicant_email: applyForm.email,
+      message: applyForm.message,
+      ...(myProfile ? { tech_profile_id: myProfile.id } : {}),
+    });
+    setApplySubmitting(false);
+    if (error) {
+      setApplyError('Something went wrong. Please try again.');
+    } else {
+      setApplySuccess(true);
+    }
+  };
+
+  const handleContact = async () => {
+    if (!contactForm.name || !contactForm.email || !contactForm.message) {
+      setContactError('Name, email, and message are required.');
+      return;
+    }
+    setContactSubmitting(true);
+    setContactError('');
+    const { error } = await supabase.from('contacts').insert({
+      tech_profile_id: activeTech.id,
+      employer_name: contactForm.name,
+      employer_email: contactForm.email,
+      company: contactForm.company,
+      message: contactForm.message,
+    });
+    setContactSubmitting(false);
+    if (error) {
+      setContactError('Something went wrong. Please try again.');
+    } else {
+      setContactSuccess(true);
+    }
+  };
+
   return (
     <div style={styles.root}>
       <nav style={styles.nav}>
@@ -320,6 +426,12 @@ export default function UXOHire() {
               <>
                 <span style={{ color: '#7a7570', fontSize: 13, padding: '0 8px' }}>{user.email}</span>
                 <button style={view === 'myProfile' ? styles.navLinkActive : styles.navLink} onClick={() => setView('myProfile')}>My Profile</button>
+                <button
+                  style={{ ...styles.navCTA, background: '#1a1408', border: '1px solid #d97706', color: '#d97706' }}
+                  onClick={() => navigate('/dashboard')}
+                >
+                  Dashboard
+                </button>
                 <button style={styles.navLink} onClick={handleSignOut}>Log Out</button>
               </>
             )}
@@ -328,6 +440,12 @@ export default function UXOHire() {
       </nav>
 
       <main style={styles.main}>
+
+        {authSuccessMsg && (
+          <div style={{ background: '#1a4a2e', border: '1px solid #4ade80', borderRadius: 8, padding: '14px 18px', color: '#4ade80', fontSize: 14, margin: '16px 0 0' }}>
+            ✅ {authSuccessMsg}
+          </div>
+        )}
 
         {/* JOBS VIEW */}
         {view === "jobs" && !activeJob && (
@@ -393,7 +511,7 @@ export default function UXOHire() {
         {/* JOB DETAIL */}
         {view === "jobs" && activeJob && (
           <div style={styles.detailWrap}>
-            <button style={styles.backBtn} onClick={() => setActiveJob(null)}>← Back to Jobs</button>
+            <button style={styles.backBtn} onClick={() => { setActiveJob(null); setApplyView(false); setApplySuccess(false); }}>← Back to Jobs</button>
             <div style={styles.detailCard}>
               <div style={styles.detailHeader}>
                 <div>
@@ -421,7 +539,42 @@ export default function UXOHire() {
               )}
               <h3 style={styles.sectionLabel}>Job Description</h3>
               <p style={styles.detailDesc}>{activeJob.description}</p>
-              <button style={styles.btnPrimary}>Apply Now</button>
+
+              {!applyView && !applySuccess && (
+                <button style={styles.btnPrimary} onClick={() => {
+                  setApplyForm({ name: myProfile?.name || '', email: myProfile?.email || user?.email || '', message: '' });
+                  setApplyError('');
+                  setApplySuccess(false);
+                  setApplyView(true);
+                }}>Apply Now</button>
+              )}
+
+              {applySuccess && (
+                <div style={{ background: '#1a4a2e', border: '1px solid #4ade80', borderRadius: 8, padding: '16px 20px', color: '#4ade80', fontSize: 14 }}>
+                  ✅ Application submitted! The employer will review your application and reach out to you directly.
+                </div>
+              )}
+
+              {applyView && !applySuccess && (
+                <div style={{ marginTop: 16, background: '#0d0f10', border: '1px solid #2a2c2e', borderRadius: 8, padding: '20px 24px' }}>
+                  <h3 style={{ ...styles.sectionLabel, marginTop: 0 }}>Apply for {activeJob.title}</h3>
+                  <div style={styles.formFields}>
+                    <label style={styles.label}>Your Name</label>
+                    <input style={styles.input} value={applyForm.name} onChange={e => setApplyForm(f => ({ ...f, name: e.target.value }))} placeholder="Full name" />
+                    <label style={styles.label}>Email Address</label>
+                    <input style={styles.input} type="email" value={applyForm.email} onChange={e => setApplyForm(f => ({ ...f, email: e.target.value }))} placeholder="you@email.com" />
+                    <label style={styles.label}>Cover Note (optional)</label>
+                    <textarea style={styles.textarea} value={applyForm.message} onChange={e => setApplyForm(f => ({ ...f, message: e.target.value }))} placeholder="Brief note about your background and interest..." />
+                    {applyError && <div style={styles.errorMsg}>⚠️ {applyError}</div>}
+                    <div style={styles.formRow}>
+                      <button style={styles.btnSecondary} onClick={() => { setApplyView(false); setApplyError(''); }}>Cancel</button>
+                      <button style={styles.btnPrimary} onClick={handleApply} disabled={applySubmitting}>
+                        {applySubmitting ? 'Submitting...' : 'Submit Application'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -466,7 +619,7 @@ export default function UXOHire() {
         {/* TECH DETAIL */}
         {view === "techs" && activeTech && (
           <div style={styles.detailWrap}>
-            <button style={styles.backBtn} onClick={() => setActiveTech(null)}>← Back to Techs</button>
+            <button style={styles.backBtn} onClick={() => { setActiveTech(null); setContactView(false); setContactSuccess(false); }}>← Back to Techs</button>
             <div style={styles.detailCard}>
               <div style={styles.detailHeader}>
                 <div>
@@ -497,7 +650,44 @@ export default function UXOHire() {
               </div>
               <h3 style={styles.sectionLabel}>Summary</h3>
               <p style={styles.detailDesc}>{activeTech.summary}</p>
-              <button style={styles.btnPrimary}>Contact This Tech</button>
+
+              {!contactView && !contactSuccess && (
+                <button style={styles.btnPrimary} onClick={() => {
+                  setContactForm({ name: '', email: user?.email || '', company: '', message: '' });
+                  setContactError('');
+                  setContactSuccess(false);
+                  setContactView(true);
+                }}>Contact This Tech</button>
+              )}
+
+              {contactSuccess && (
+                <div style={{ background: '#1a4a2e', border: '1px solid #4ade80', borderRadius: 8, padding: '16px 20px', color: '#4ade80', fontSize: 14 }}>
+                  ✅ Message sent! The technician will be notified and will reach out to you directly.
+                </div>
+              )}
+
+              {contactView && !contactSuccess && (
+                <div style={{ marginTop: 16, background: '#0d0f10', border: '1px solid #2a2c2e', borderRadius: 8, padding: '20px 24px' }}>
+                  <h3 style={{ ...styles.sectionLabel, marginTop: 0 }}>Contact {activeTech.name}</h3>
+                  <div style={styles.formFields}>
+                    <label style={styles.label}>Your Name</label>
+                    <input style={styles.input} value={contactForm.name} onChange={e => setContactForm(f => ({ ...f, name: e.target.value }))} placeholder="Your full name" />
+                    <label style={styles.label}>Your Email</label>
+                    <input style={styles.input} type="email" value={contactForm.email} onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))} placeholder="you@company.com" />
+                    <label style={styles.label}>Company (optional)</label>
+                    <input style={styles.input} value={contactForm.company} onChange={e => setContactForm(f => ({ ...f, company: e.target.value }))} placeholder="Your company name" />
+                    <label style={styles.label}>Message</label>
+                    <textarea style={styles.textarea} value={contactForm.message} onChange={e => setContactForm(f => ({ ...f, message: e.target.value }))} placeholder="Describe the role, project, and why you'd like to connect..." />
+                    {contactError && <div style={styles.errorMsg}>⚠️ {contactError}</div>}
+                    <div style={styles.formRow}>
+                      <button style={styles.btnSecondary} onClick={() => { setContactView(false); setContactError(''); }}>Cancel</button>
+                      <button style={styles.btnPrimary} onClick={handleContact} disabled={contactSubmitting}>
+                        {contactSubmitting ? 'Sending...' : 'Send Message'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -603,12 +793,16 @@ export default function UXOHire() {
                                 <input id="hazwoper8Upload" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: "none" }} onChange={async (e) => {
                                   const file = e.target.files[0];
                                   if (file) {
-                                    const { error } = await uploadFile(file, 'certs');
-                                    if (error) alert(`Failed to upload ${file.name}`);
-                                    else alert(`${file.name} uploaded successfully!`);
+                                    setUploadStatus(s => ({ ...s, hazwoper8: 'uploading' }));
+                                    const { path, error } = await uploadFile(file, 'certs');
+                                    setUploadStatus(s => ({ ...s, hazwoper8: error ? 'error' : 'success' }));
+                                    if (path) setUploadPaths(p => ({ ...p, hazwoper8: path }));
                                   }
                                 }} />
                               </label>
+                              {uploadStatus.hazwoper8 === 'uploading' && <div style={{ color: '#d97706', fontSize: 13 }}>⏳ Uploading...</div>}
+                              {uploadStatus.hazwoper8 === 'success' && <div style={{ color: '#4ade80', fontSize: 13 }}>✅ Uploaded successfully</div>}
+                              {uploadStatus.hazwoper8 === 'error' && <div style={{ color: '#ef4444', fontSize: 13 }}>❌ Upload failed. Please try again.</div>}
                             </div>
                           )}
                         </div>
@@ -636,12 +830,16 @@ export default function UXOHire() {
                               <input id="physicalUpload" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: "none" }} onChange={async (e) => {
                                 const file = e.target.files[0];
                                 if (file) {
-                                  const { error } = await uploadFile(file, 'physicals');
-                                  if (error) alert(`Failed to upload ${file.name}`);
-                                  else alert(`${file.name} uploaded successfully!`);
+                                  setUploadStatus(s => ({ ...s, physical: 'uploading' }));
+                                  const { path, error } = await uploadFile(file, 'physicals');
+                                  setUploadStatus(s => ({ ...s, physical: error ? 'error' : 'success' }));
+                                  if (path) setUploadPaths(p => ({ ...p, physical: path }));
                                 }
                               }} />
                             </label>
+                            {uploadStatus.physical === 'uploading' && <div style={{ color: '#d97706', fontSize: 13 }}>⏳ Uploading...</div>}
+                            {uploadStatus.physical === 'success' && <div style={{ color: '#4ade80', fontSize: 13 }}>✅ Uploaded successfully</div>}
+                            {uploadStatus.physical === 'error' && <div style={{ color: '#ef4444', fontSize: 13 }}>❌ Upload failed. Please try again.</div>}
                           </div>
                         )}
                       </div>
@@ -715,13 +913,20 @@ export default function UXOHire() {
                         <p style={styles.uploadSub}>Max 10MB each</p>
                         <input id="certUpload" type="file" accept=".pdf,.jpg,.jpeg,.png" multiple style={{ display: "none" }} onChange={async (e) => {
                           const files = Array.from(e.target.files);
+                          setUploadStatus(s => ({ ...s, certs: 'uploading' }));
+                          let anyError = false;
+                          const newPaths = [];
                           for (const file of files) {
-                            const { error } = await uploadFile(file, 'certs');
-                            if (error) alert(`Failed to upload ${file.name}`);
-                            else alert(`${file.name} uploaded successfully!`);
+                            const { path, error } = await uploadFile(file, 'certs');
+                            if (error) { anyError = true; } else if (path) { newPaths.push(path); }
                           }
+                          setUploadStatus(s => ({ ...s, certs: anyError ? 'error' : 'success' }));
+                          if (newPaths.length > 0) setUploadPaths(p => ({ ...p, certs: [...p.certs, ...newPaths] }));
                         }} />
                       </label>
+                      {uploadStatus.certs === 'uploading' && <div style={{ color: '#d97706', fontSize: 13 }}>⏳ Uploading...</div>}
+                      {uploadStatus.certs === 'success' && <div style={{ color: '#4ade80', fontSize: 13 }}>✅ Uploaded successfully</div>}
+                      {uploadStatus.certs === 'error' && <div style={{ color: '#ef4444', fontSize: 13 }}>❌ One or more uploads failed. Please try again.</div>}
 
                       <label style={styles.label}>Upload Resume</label>
                       <label htmlFor="resumeUpload" style={styles.uploadBox}>
@@ -731,12 +936,16 @@ export default function UXOHire() {
                         <input id="resumeUpload" type="file" accept=".pdf,.doc,.docx" style={{ display: "none" }} onChange={async (e) => {
                           const file = e.target.files[0];
                           if (file) {
-                            const { error } = await uploadFile(file, 'resumes');
-                            if (error) alert(`Failed to upload ${file.name}`);
-                            else alert(`${file.name} uploaded successfully!`);
+                            setUploadStatus(s => ({ ...s, resume: 'uploading' }));
+                            const { path, error } = await uploadFile(file, 'resumes');
+                            setUploadStatus(s => ({ ...s, resume: error ? 'error' : 'success' }));
+                            if (path) setUploadPaths(p => ({ ...p, resume: path }));
                           }
                         }} />
                       </label>
+                      {uploadStatus.resume === 'uploading' && <div style={{ color: '#d97706', fontSize: 13 }}>⏳ Uploading...</div>}
+                      {uploadStatus.resume === 'success' && <div style={{ color: '#4ade80', fontSize: 13 }}>✅ Uploaded successfully</div>}
+                      {uploadStatus.resume === 'error' && <div style={{ color: '#ef4444', fontSize: 13 }}>❌ Upload failed. Please try again.</div>}
 
                       <div style={styles.formRow}>
                         <button style={styles.btnSecondary} onClick={() => setProfileStep(1)}>← Back</button>
@@ -764,6 +973,7 @@ export default function UXOHire() {
                         <button style={styles.btnSecondary} onClick={() => setProfileStep(2)}>← Back</button>
                         <button style={styles.btnPrimary} onClick={handleSubmitProfile}>Submit Profile ✓</button>
                       </div>
+                      {submitError && <div style={styles.errorMsg}>⚠️ {submitError}</div>}
                     </div>
                   )}
                 </div>
@@ -855,6 +1065,7 @@ export default function UXOHire() {
                     <button style={styles.btnSecondary} onClick={() => setPostStep(2)}>← Back</button>
                     <button style={styles.btnPrimary} onClick={handleSubmitJobPost}>Submit Job Post →</button>
                   </div>
+                  {submitError && <div style={styles.errorMsg}>⚠️ {submitError}</div>}
                 </div>
               )}
             </div>
