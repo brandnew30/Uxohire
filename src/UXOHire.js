@@ -82,6 +82,16 @@ export default function UXOHire() {
   const [techs, setTechs] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
 
+  // Auth state
+  const [user, setUser] = useState(null);
+  const [authForm, setAuthForm] = useState({ email: '', password: '' });
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+
+  // My Profile state
+  const [myProfile, setMyProfile] = useState(null);
+  const [myProfileLoading, setMyProfileLoading] = useState(false);
+
   const [profile, setProfile] = useState({
     name: "", email: "", location: "", uxoHours: "", travel: "Nationwide", summary: "",
     dodCerts: [], hazwoper40: false, hazwoper40Date: "", hazwoper8: false, hazwoper8Date: "",
@@ -93,6 +103,17 @@ export default function UXOHire() {
     company: "", title: "", location: "", type: "Contract", salary: "", description: "",
     requiredCerts: [], preferredCerts: [],
   });
+
+  // Auth session init and listener
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const notes = [];
