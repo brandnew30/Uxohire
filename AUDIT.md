@@ -17,6 +17,14 @@
 - [x] Added jobPostSuccess confirmation screen
 - [x] Removed old uxo-hire.jsx prototype
 
+### Wave 2 — Auth (completed: 2026-04-13)
+- [x] Supabase Auth session listener and user state
+- [x] Login and Signup views (email/password)
+- [x] Nav updated with auth buttons (login/signup when logged out, email + logout when logged in)
+- [x] Tech profiles and job posts linked to auth users via user_id
+- [x] My Profile dashboard with open-to-work availability toggle
+- [x] Migration 002: add user_id columns to tech_profiles and job_posts
+
 ---
 
 ## Overview
