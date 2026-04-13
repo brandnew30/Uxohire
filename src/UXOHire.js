@@ -309,6 +309,18 @@ export default function UXOHire() {
             <button style={view === "jobs" ? styles.navLinkActive : styles.navLink} onClick={() => setView("jobs")}>Browse Jobs</button>
             <button style={view === "techs" ? styles.navLinkActive : styles.navLink} onClick={() => setView("techs")}>Find Techs</button>
             <button style={styles.navCTA} onClick={() => setView("postJob")}>Post a Job →</button>
+            {!user ? (
+              <>
+                <button style={styles.navLink} onClick={() => { setView('login'); setAuthError(''); }}>Log In</button>
+                <button style={{ ...styles.navCTA, background: 'transparent', border: '1px solid #d97706', color: '#d97706', marginLeft: 4 }} onClick={() => { setView('signup'); setAuthError(''); }}>Sign Up</button>
+              </>
+            ) : (
+              <>
+                <span style={{ color: '#7a7570', fontSize: 13, padding: '0 8px' }}>{user.email}</span>
+                <button style={view === 'myProfile' ? styles.navLinkActive : styles.navLink} onClick={() => setView('myProfile')}>My Profile</button>
+                <button style={styles.navLink} onClick={handleSignOut}>Log Out</button>
+              </>
+            )}
           </div>
         </div>
       </nav>
