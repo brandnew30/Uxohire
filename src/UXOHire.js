@@ -89,7 +89,7 @@ export default function UXOHire({ user: userProp }) {
     // /dashboard is handled by App.js routing, not UXOHire
   };
   const view = pathToView[location.pathname] || 'jobs';
-  const setView = (v) => {
+  const setView = (v, opts = {}) => {
     const viewToPath = {
       jobs: '/',
       techs: '/techs',
@@ -100,7 +100,7 @@ export default function UXOHire({ user: userProp }) {
       myProfile: '/my-profile',
       jobPostSuccess: '/job-post-success',
     };
-    navigate(viewToPath[v] || '/');
+    navigate(viewToPath[v] || '/', opts);
   };
 
   const [activeJob, setActiveJob] = useState(null);
@@ -165,6 +165,15 @@ export default function UXOHire({ user: userProp }) {
   // Sync user from parent App when prop changes (login/logout)
   useEffect(() => { setUser(userProp ?? null); }, [userProp]);
 
+  // Protected navigation to profile creation — redirects to signup if not logged in
+  const goToCreateProfile = () => {
+    if (!user) {
+      navigate('/signup', { state: { returnTo: '/create-profile' } });
+    } else {
+      setView('techProfile');
+    }
+  };
+
   useEffect(() => {
     const notes = [];
     if (profile.hazwoper8 && isExpiringSoon(profile.hazwoper8Date)) notes.push("⚠️ Your 8-HR HAZWOPER refresher expires within 30 days. Please update it soon.");
@@ -194,6 +203,13 @@ export default function UXOHire({ user: userProp }) {
     }
     fetchData();
   }, []);
+
+  // Guard: /create-profile requires auth — redirect to signup if unauthenticated
+  useEffect(() => {
+    if (view === 'techProfile' && !user) {
+      navigate('/signup', { state: { returnTo: '/create-profile' }, replace: true });
+    }
+  }, [view, user]); // eslint-disable-line
 
   useEffect(() => {
     if (user) fetchMyProfile();
@@ -227,9 +243,13 @@ export default function UXOHire({ user: userProp }) {
   });
 
   const handleSubmitProfile = async () => {
+    if (!user) {
+      navigate('/signup', { state: { returnTo: '/create-profile' } });
+      return;
+    }
     setSubmitError('');
     const profileData = {
-      name: profile.name, email: profile.email, location: profile.location,
+      name: profile.name, email: profile.email || user.email, location: profile.location,
       uxo_hours: profile.uxoHours, travel: profile.travel, summary: profile.summary,
       dod_certs: profile.dodCerts, hazwoper_40: profile.hazwoper40,
       hazwoper_40_date: profile.hazwoper40Date || null, hazwoper_8: profile.hazwoper8,
@@ -238,22 +258,22 @@ export default function UXOHire({ user: userProp }) {
       clearance: profile.clearance, clearance_level: profile.clearanceLevel,
       dive_cert: profile.diveCert, drivers_license: profile.driversLicense,
       cdl: profile.cdl, open_to_work: openToWork,
+      // Always bind to authenticated user — required, not optional
+      user_id: user.id,
       // Persist upload paths collected during form steps
       resume_path: uploadPaths.resume || null,
       cert_paths: uploadPaths.certs || [],
       hazwoper8_cert_path: uploadPaths.hazwoper8 || null,
       physical_cert_path: uploadPaths.physical || null,
-      ...(user ? { user_id: user.id } : {}),
     };
     const { error } = await supabase.from('tech_profiles').insert(profileData);
     if (error) {
       setSubmitError("Something went wrong saving your profile. Please try again.");
     } else {
-      setView("techProfile");
-      setProfileSubmitted(true);
-      // Refresh techs list
+      // Refresh techs list then send user straight to their dashboard
       const { data: techData } = await supabase.from('tech_profiles').select('*').eq('open_to_work', true);
       setTechs((techData || []).map(normalizeTech));
+      navigate('/dashboard', { replace: true });
     }
   };
 
@@ -291,17 +311,26 @@ export default function UXOHire({ user: userProp }) {
   const handleSignUp = async () => {
     setAuthLoading(true);
     setAuthError('');
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: authForm.email,
       password: authForm.password,
     });
     setAuthLoading(false);
     if (error) {
       setAuthError(error.message);
+    } else if (data.session) {
+      // Email confirmation disabled — user is immediately logged in
+      setAuthForm({ email: '', password: '' });
+      const returnTo = location.state?.returnTo;
+      navigate(returnTo || '/create-profile', { replace: true });
     } else {
+      // Email confirmation required
       setAuthError('');
-      setAuthSuccessMsg('Account created! Check your email to confirm your account, then log in.');
-      setView('jobs');
+      setAuthSuccessMsg('Account created! Check your email to confirm, then log in.');
+      navigate('/login', {
+        replace: true,
+        state: { returnTo: location.state?.returnTo || '/create-profile' },
+      });
     }
   };
 
@@ -317,13 +346,9 @@ export default function UXOHire({ user: userProp }) {
       setAuthError(error.message);
     } else {
       setAuthForm({ email: '', password: '' });
-      // Honour returnTo from navigation state (e.g. /dashboard redirect)
+      // returnTo from state (e.g. post-signup confirmation, /dashboard redirect, /create-profile)
       const returnTo = location.state?.returnTo;
-      if (returnTo) {
-        navigate(returnTo, { replace: true });
-      } else {
-        setView('jobs');
-      }
+      navigate(returnTo || '/dashboard', { replace: true });
     }
   };
 
@@ -419,13 +444,12 @@ export default function UXOHire({ user: userProp }) {
             <button style={styles.navCTA} onClick={() => setView("postJob")}>Post a Job →</button>
             {!user ? (
               <>
-                <button style={styles.navLink} onClick={() => { setView('login'); setAuthError(''); }}>Log In</button>
-                <button style={{ ...styles.navCTA, background: 'transparent', border: '1px solid #d97706', color: '#d97706', marginLeft: 4 }} onClick={() => { setView('signup'); setAuthError(''); }}>Sign Up</button>
+                <button style={styles.navLink} onClick={() => navigate('/login')}>Log In</button>
+                <button style={{ ...styles.navCTA, background: '#d97706' }} onClick={() => navigate('/signup')}>Sign Up</button>
               </>
             ) : (
               <>
-                <span style={{ color: '#7a7570', fontSize: 13, padding: '0 8px' }}>{user.email}</span>
-                <button style={view === 'myProfile' ? styles.navLinkActive : styles.navLink} onClick={() => setView('myProfile')}>My Profile</button>
+                <span style={{ color: '#7a7570', fontSize: 13, padding: '0 8px', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
                 <button
                   style={{ ...styles.navCTA, background: '#1a1408', border: '1px solid #d97706', color: '#d97706' }}
                   onClick={() => navigate('/dashboard')}
@@ -455,7 +479,7 @@ export default function UXOHire({ user: userProp }) {
               <h1 style={styles.heroTitle}>Find Your Next<br /><span style={styles.heroAccent}>UXO Assignment</span></h1>
               <p style={styles.heroSub}>Connecting certified UXO technicians with the companies that need them most.</p>
               <div style={styles.heroActions}>
-                <button style={styles.btnPrimary} onClick={() => setView("techProfile")}>Create Tech Profile</button>
+                <button style={styles.btnPrimary} onClick={goToCreateProfile}>Create Tech Profile</button>
                 <button style={styles.btnSecondary} onClick={() => setView("postJob")}>Post a Job</button>
               </div>
             </div>
@@ -584,7 +608,7 @@ export default function UXOHire({ user: userProp }) {
           <div>
             <div style={styles.pageHeader}>
               <h2 style={styles.pageTitle}>Available UXO Technicians</h2>
-              <p style={styles.pageSub}>Certified techs actively open to new assignments. <a href="#" style={styles.inlineLink} onClick={e => { e.preventDefault(); setView("techProfile"); }}>Create your profile →</a></p>
+              <p style={styles.pageSub}>Certified techs actively open to new assignments. <a href="#" style={styles.inlineLink} onClick={e => { e.preventDefault(); goToCreateProfile(); }}>Create your profile →</a></p>
             </div>
             <div style={styles.cardGrid}>
               {techs.map(tech => (
@@ -727,7 +751,7 @@ export default function UXOHire({ user: userProp }) {
                       <label style={styles.label}>Full Name</label>
                       <input style={styles.input} placeholder="John Smith" value={profile.name} onChange={e => setProfile(p => ({ ...p, name: e.target.value }))} />
                       <label style={styles.label}>Email Address</label>
-                      <input style={styles.input} placeholder="you@email.com" type="email" value={profile.email} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} />
+                      <input style={styles.input} placeholder="you@email.com" type="email" value={profile.email || user?.email || ''} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} />
                       <label style={styles.label}>Location (City, State)</label>
                       <input style={styles.input} placeholder="Dallas, TX" value={profile.location} onChange={e => setProfile(p => ({ ...p, location: e.target.value }))} />
                       <label style={styles.label}>UXO Hours</label>
@@ -1150,7 +1174,7 @@ export default function UXOHire({ user: userProp }) {
               ) : !myProfile ? (
                 <div style={styles.formFields}>
                   <p style={{ color: '#9a9490', fontSize: 15 }}>You haven't created a tech profile yet.</p>
-                  <button style={styles.btnPrimary} onClick={() => setView('techProfile')}>Create Tech Profile</button>
+                  <button style={styles.btnPrimary} onClick={goToCreateProfile}>Create Tech Profile</button>
                 </div>
               ) : (
                 <div style={styles.formFields}>
