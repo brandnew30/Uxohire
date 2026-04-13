@@ -178,7 +178,7 @@ export default function UXOHire() {
   });
 
   const handleSubmitProfile = async () => {
-    const { error } = await supabase.from('tech_profiles').insert({
+    const profileData = {
       name: profile.name, email: profile.email, location: profile.location,
       uxo_hours: profile.uxoHours, travel: profile.travel, summary: profile.summary,
       dod_certs: profile.dodCerts, hazwoper_40: profile.hazwoper40,
@@ -187,8 +187,10 @@ export default function UXOHire() {
       physical_date: profile.physicalDate || null, military_eod: profile.militaryEod,
       clearance: profile.clearance, clearance_level: profile.clearanceLevel,
       dive_cert: profile.diveCert, drivers_license: profile.driversLicense,
-      cdl: profile.cdl, open_to_work: openToWork
-    });
+      cdl: profile.cdl, open_to_work: openToWork,
+      ...(user ? { user_id: user.id } : {}),
+    };
+    const { error } = await supabase.from('tech_profiles').insert(profileData);
     if (error) {
       alert("Something went wrong saving your profile. Please try again.");
     } else {
@@ -218,6 +220,7 @@ export default function UXOHire() {
       required_certs: jobPost.requiredCerts,
       preferred_certs: jobPost.preferredCerts,
       status: 'pending_payment',
+      ...(user ? { user_id: user.id } : {}),
     });
     if (error) {
       alert("Something went wrong. Please try again.");
