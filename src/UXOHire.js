@@ -1,38 +1,41 @@
 import { useState, useEffect } from "react";
+import { supabase } from "./supabaseClient";
 
-const supabaseUrl = 'https://jdtqzmzcdwnvfcajwsch.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkdHF6bXpjZHdudmZjYWp3c2NoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjM0NTMsImV4cCI6MjA4OTU5OTQ1M30.Eq7O7vvG5zqA9He1dJ7WTXNGjF1TGkhE8efOjYMfYds';
+// Stripe integration pending — job posts saved as pending_payment
 
-async function supabaseInsert(table, data) {
-  const res = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
-    method: 'POST',
-    headers: {
-      'apikey': supabaseKey,
-      'Authorization': `Bearer ${supabaseKey}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=minimal'
-    },
-    body: JSON.stringify(data)
-  });
-  return res.ok ? { error: null } : { error: await res.json() };
-}
+const normalizeJob = (j) => ({
+  id: j.id,
+  company: j.company,
+  title: j.title,
+  location: j.location,
+  type: j.type,
+  salary: j.salary || '',
+  description: j.description || '',
+  requiredCerts: j.required_certs || [],
+  preferredCerts: j.preferred_certs || [],
+  posted: new Date(j.created_at).toLocaleDateString(),
+  status: j.status,
+});
 
-async function uploadFile(file, folder) {
-  const fileName = `${folder}/${Date.now()}_${file.name}`;
-  const res = await fetch(`${supabaseUrl}/storage/v1/object/uxo-uploads/${fileName}`, {
-    method: 'POST',
-    headers: {
-      'apikey': supabaseKey,
-      'Authorization': `Bearer ${supabaseKey}`,
-      'Content-Type': file.type,
-      'x-upsert': 'true'
-    },
-    body: file
-  });
-  return res.ok ? { path: fileName, error: null } : { path: null, error: await res.json() };
-}
-
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/YOUR_LINK_HERE';
+const normalizeTech = (t) => ({
+  id: t.id,
+  name: t.name,
+  location: t.location,
+  uxoHours: t.uxo_hours || '0',
+  travel: t.travel,
+  dodCerts: t.dod_certs || [],
+  hazwoper40: t.hazwoper_40,
+  hazwoper8: t.hazwoper_8,
+  physicalCurrent: t.physical_current,
+  militaryEod: t.military_eod,
+  clearance: t.clearance,
+  clearanceLevel: t.clearance_level || '',
+  diveCert: t.dive_cert,
+  driversLicense: t.drivers_license,
+  cdl: t.cdl,
+  available: t.open_to_work,
+  summary: t.summary || '',
+});
 
 const isExpired = (dateStr) => {
   if (!dateStr) return false;
@@ -51,17 +54,6 @@ const isOlderThanOneYear = (dateStr) => {
   const diffDays = (new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24);
   return diffDays > 365;
 };
-
-const SAMPLE_JOBS = [
-  { id: 1, company: "Ordnance Solutions Group", title: "Senior UXO Tech II", location: "Huntsville, AL", type: "Contract", requiredCerts: ["DOD UXO Tech II", "HAZWOPER 40-HR"], preferredCerts: ["Security Clearance", "CDL"], salary: "$45–$55/hr", posted: "2 days ago", description: "Seeking experienced UXO Tech II for munitions response project on former military range. Must have active clearance and 5+ years field experience." },
-  { id: 2, company: "Clearance Corp Inc.", title: "UXO Tech I – Field Survey", location: "San Diego, CA", type: "Full-Time", requiredCerts: ["DOD UXO Tech I"], preferredCerts: ["Dive Certified", "HAZWOPER 40-HR"], salary: "$38–$44/hr", posted: "5 days ago", description: "Entry-level UXO Tech I needed for underwater UXO survey operations. Dive certification a plus. Travel required." },
-  { id: 3, company: "Apex Munitions Response", title: "UXO Quality Control Specialist", location: "Remote / Travel", type: "Contract", requiredCerts: ["DOD UXO Tech III", "QC Specialist"], preferredCerts: ["Security Clearance"], salary: "$65–$80/hr", posted: "1 week ago", description: "QC Specialist needed to oversee field teams across multiple sites. Must hold Tech III and have prior QC experience." },
-];
-
-const SAMPLE_TECHS = [
-  { id: 1, name: "Marcus R.", location: "Fayetteville, NC", uxoHours: "4,200", travel: "Nationwide", dodCerts: ["DOD UXO Tech III"], hazwoper40: true, hazwoper8: true, physicalCurrent: true, militaryEod: true, clearance: true, clearanceLevel: "Secret", diveCert: false, driversLicense: true, cdl: true, available: true, summary: "Former EOD technician with extensive civilian UXO experience. Specializes in range clearance and DP operations." },
-  { id: 2, name: "Denise K.", location: "Tampa, FL", uxoHours: "2,800", travel: "Nationwide", dodCerts: ["DOD UXO Tech II"], hazwoper40: true, hazwoper8: true, physicalCurrent: true, militaryEod: false, clearance: false, diveCert: true, driversLicense: true, cdl: false, available: true, summary: "UXO Tech II with underwater survey background. Available for coastal and inland water projects." },
-];
 
 const DOD_CERT_OPTIONS = ["DOD UXO Tech I", "DOD UXO Tech II", "DOD UXO Tech III", "QC Specialist", "UXO Safety Officer"];
 const TRAVEL_OPTIONS = ["Local only", "Regional", "Nationwide", "International"];
@@ -86,6 +78,9 @@ export default function UXOHire() {
   const [notifications, setNotifications] = useState([]);
   const [profileSubmitted, setProfileSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [jobs, setJobs] = useState([]);
+  const [techs, setTechs] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
   const [profile, setProfile] = useState({
     name: "", email: "", location: "", uxoHours: "", travel: "Nationwide", summary: "",
@@ -108,6 +103,27 @@ export default function UXOHire() {
     setNotifications(notes);
   }, [profile.hazwoper8Date, profile.physicalDate, profile.hazwoper8, profile.physicalCurrent]);
 
+  useEffect(() => {
+    async function fetchData() {
+      setDataLoading(true);
+      const { data: jobData } = await supabase
+        .from('job_posts')
+        .select('*')
+        .in('status', ['published', 'pending_payment'])
+        .order('created_at', { ascending: false });
+
+      const { data: techData } = await supabase
+        .from('tech_profiles')
+        .select('*')
+        .eq('open_to_work', true);
+
+      setJobs((jobData || []).map(normalizeJob));
+      setTechs((techData || []).map(normalizeTech));
+      setDataLoading(false);
+    }
+    fetchData();
+  }, []);
+
   const show8HrQuestion = profile.hazwoper40 && isOlderThanOneYear(profile.hazwoper40Date);
 
   const validateStep2 = () => {
@@ -128,16 +144,14 @@ export default function UXOHire() {
     });
   };
 
-  const filteredJobs = SAMPLE_JOBS.filter(j => {
+  const filteredJobs = jobs.filter(j => {
     const certMatch = filterCert ? j.requiredCerts.includes(filterCert) || j.preferredCerts.includes(filterCert) : true;
     const locMatch = filterLocation ? j.location.toLowerCase().includes(filterLocation.toLowerCase()) : true;
     return certMatch && locMatch;
   });
 
   const handleSubmitProfile = async () => {
-    console.log("Submit clicked");
-    console.log("Profile data:", profile);
-    const { error } = await supabaseInsert('tech_profiles', {
+    const { error } = await supabase.from('tech_profiles').insert({
       name: profile.name, email: profile.email, location: profile.location,
       uxo_hours: profile.uxoHours, travel: profile.travel, summary: profile.summary,
       dod_certs: profile.dodCerts, hazwoper_40: profile.hazwoper40,
@@ -148,14 +162,46 @@ export default function UXOHire() {
       dive_cert: profile.diveCert, drivers_license: profile.driversLicense,
       cdl: profile.cdl, open_to_work: openToWork
     });
-    console.log("Insert error:", error);
-    if (error) { 
-      alert("Something went wrong. Please try again."); 
-    } else { 
+    if (error) {
+      alert("Something went wrong saving your profile. Please try again.");
+    } else {
       setView("techProfile");
       setProfileSubmitted(true);
+      // Refresh techs list
+      const { data: techData } = await supabase.from('tech_profiles').select('*').eq('open_to_work', true);
+      setTechs((techData || []).map(normalizeTech));
     }
   };
+
+  // Upload helper using supabase-js storage
+  const uploadFile = async (file, folder) => {
+    const fileName = `${folder}/${Date.now()}_${file.name}`;
+    const { error } = await supabase.storage.from('uxo-uploads').upload(fileName, file, { upsert: true });
+    return error ? { path: null, error } : { path: fileName, error: null };
+  };
+
+  const handleSubmitJobPost = async () => {
+    const { error } = await supabase.from('job_posts').insert({
+      company: jobPost.company,
+      title: jobPost.title,
+      location: jobPost.location,
+      type: jobPost.type,
+      salary: jobPost.salary,
+      description: jobPost.description,
+      required_certs: jobPost.requiredCerts,
+      preferred_certs: jobPost.preferredCerts,
+      status: 'pending_payment',
+    });
+    if (error) {
+      alert("Something went wrong. Please try again.");
+    } else {
+      setView("jobPostSuccess");
+      // Refresh jobs
+      const { data: jobData } = await supabase.from('job_posts').select('*').in('status', ['published', 'pending_payment']).order('created_at', { ascending: false });
+      setJobs((jobData || []).map(normalizeJob));
+    }
+  };
+
   return (
     <div style={styles.root}>
       <nav style={styles.nav}>
@@ -195,6 +241,9 @@ export default function UXOHire() {
               <span style={styles.filterCount}>{filteredJobs.length} positions</span>
             </div>
             <div style={styles.cardGrid}>
+              {dataLoading && (
+                <div style={{ color: '#7a7570', fontSize: 14, padding: '20px 0' }}>Loading listings...</div>
+              )}
               {filteredJobs.map(job => (
                 <div key={job.id} style={styles.jobCard} onClick={() => setActiveJob(job)}>
                   <div style={styles.cardTop}>
@@ -276,7 +325,7 @@ export default function UXOHire() {
               <p style={styles.pageSub}>Certified techs actively open to new assignments. <a href="#" style={styles.inlineLink} onClick={e => { e.preventDefault(); setView("techProfile"); }}>Create your profile →</a></p>
             </div>
             <div style={styles.cardGrid}>
-              {SAMPLE_TECHS.filter(t => t.available).map(tech => (
+              {techs.map(tech => (
                 <div key={tech.id} style={styles.jobCard} onClick={() => setActiveTech(tech)}>
                   <div style={styles.cardTop}>
                     <div>
@@ -695,10 +744,27 @@ export default function UXOHire() {
                   </div>
                   <div style={styles.formRow}>
                     <button style={styles.btnSecondary} onClick={() => setPostStep(2)}>← Back</button>
-                    <button style={styles.btnPrimary} onClick={() => { window.location.href = STRIPE_PAYMENT_LINK; }}>Pay & Post Job →</button>
+                    <button style={styles.btnPrimary} onClick={handleSubmitJobPost}>Submit Job Post →</button>
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* JOB POST SUCCESS */}
+        {view === "jobPostSuccess" && (
+          <div style={styles.formWrap}>
+            <div style={styles.successCard}>
+              <div style={styles.successIcon}>🎯</div>
+              <h2 style={styles.successTitle}>Job Post Received!</h2>
+              <p style={styles.successMsg}>
+                Your job posting has been saved. To publish it and make it visible to techs,
+                complete payment of $149/30 days. You'll receive payment instructions via email shortly.
+              </p>
+              <button style={styles.btnPrimary} onClick={() => { setView("jobs"); setPostStep(1); setJobPost({ company: "", title: "", location: "", type: "Contract", salary: "", description: "", requiredCerts: [], preferredCerts: [] }); }}>
+                Back to Jobs
+              </button>
             </div>
           </div>
         )}
