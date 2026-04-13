@@ -145,6 +145,12 @@ export default function UXOHire() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (user) fetchMyProfile();
+    else setMyProfile(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   const show8HrQuestion = profile.hazwoper40 && isOlderThanOneYear(profile.hazwoper40Date);
 
   const validateStep2 = () => {
@@ -220,6 +226,74 @@ export default function UXOHire() {
       // Refresh jobs
       const { data: jobData } = await supabase.from('job_posts').select('*').in('status', ['published', 'pending_payment']).order('created_at', { ascending: false });
       setJobs((jobData || []).map(normalizeJob));
+    }
+  };
+
+  // Auth handlers
+  const handleSignUp = async () => {
+    setAuthLoading(true);
+    setAuthError('');
+    const { error } = await supabase.auth.signUp({
+      email: authForm.email,
+      password: authForm.password,
+    });
+    setAuthLoading(false);
+    if (error) {
+      setAuthError(error.message);
+    } else {
+      setAuthError('');
+      setView('jobs');
+      alert('Account created! Check your email to confirm your account, then log in.');
+    }
+  };
+
+  const handleLogin = async () => {
+    setAuthLoading(true);
+    setAuthError('');
+    const { error } = await supabase.auth.signInWithPassword({
+      email: authForm.email,
+      password: authForm.password,
+    });
+    setAuthLoading(false);
+    if (error) {
+      setAuthError(error.message);
+    } else {
+      setView('jobs');
+      setAuthForm({ email: '', password: '' });
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setMyProfile(null);
+    setView('jobs');
+  };
+
+  // My Profile handlers
+  const fetchMyProfile = async () => {
+    if (!user) return;
+    setMyProfileLoading(true);
+    const { data } = await supabase
+      .from('tech_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    setMyProfile(data ? normalizeTech(data) : null);
+    setMyProfileLoading(false);
+  };
+
+  const handleToggleAvailability = async () => {
+    if (!myProfile || !user) return;
+    const newStatus = !myProfile.available;
+    const { error } = await supabase
+      .from('tech_profiles')
+      .update({ open_to_work: newStatus })
+      .eq('user_id', user.id);
+    if (!error) {
+      setMyProfile(p => ({ ...p, available: newStatus }));
+      const { data: techData } = await supabase.from('tech_profiles').select('*').eq('open_to_work', true);
+      setTechs((techData || []).map(normalizeTech));
     }
   };
 
@@ -786,6 +860,109 @@ export default function UXOHire() {
               <button style={styles.btnPrimary} onClick={() => { setView("jobs"); setPostStep(1); setJobPost({ company: "", title: "", location: "", type: "Contract", salary: "", description: "", requiredCerts: [], preferredCerts: [] }); }}>
                 Back to Jobs
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* LOGIN VIEW */}
+        {view === 'login' && (
+          <div style={styles.formWrap}>
+            <button style={styles.backBtn} onClick={() => { setView('jobs'); setAuthError(''); }}>← Back</button>
+            <div style={styles.formCard}>
+              <h2 style={styles.formTitle}>Log In</h2>
+              <div style={styles.formFields}>
+                <label style={styles.label}>Email</label>
+                <input style={styles.input} type="email" placeholder="you@email.com" value={authForm.email} onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))} />
+                <label style={styles.label}>Password</label>
+                <input style={styles.input} type="password" placeholder="Your password" value={authForm.password} onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))} />
+                {authError && <div style={styles.errorMsg}>⚠️ {authError}</div>}
+                <button style={styles.btnPrimary} onClick={handleLogin} disabled={authLoading}>
+                  {authLoading ? 'Logging in...' : 'Log In'}
+                </button>
+                <p style={{ color: '#7a7570', fontSize: 13, textAlign: 'center' }}>
+                  Don't have an account?{' '}
+                  <span style={{ color: '#d97706', cursor: 'pointer' }} onClick={() => { setView('signup'); setAuthError(''); }}>Sign up</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SIGNUP VIEW */}
+        {view === 'signup' && (
+          <div style={styles.formWrap}>
+            <button style={styles.backBtn} onClick={() => { setView('jobs'); setAuthError(''); }}>← Back</button>
+            <div style={styles.formCard}>
+              <h2 style={styles.formTitle}>Create Account</h2>
+              <div style={styles.formFields}>
+                <label style={styles.label}>Email</label>
+                <input style={styles.input} type="email" placeholder="you@email.com" value={authForm.email} onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))} />
+                <label style={styles.label}>Password</label>
+                <input style={styles.input} type="password" placeholder="Minimum 6 characters" value={authForm.password} onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))} />
+                {authError && <div style={styles.errorMsg}>⚠️ {authError}</div>}
+                <button style={styles.btnPrimary} onClick={handleSignUp} disabled={authLoading}>
+                  {authLoading ? 'Creating account...' : 'Create Account'}
+                </button>
+                <p style={{ color: '#7a7570', fontSize: 13, textAlign: 'center' }}>
+                  Already have an account?{' '}
+                  <span style={{ color: '#d97706', cursor: 'pointer' }} onClick={() => { setView('login'); setAuthError(''); }}>Log in</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MY PROFILE VIEW */}
+        {view === 'myProfile' && (
+          <div style={styles.formWrap}>
+            <button style={styles.backBtn} onClick={() => setView('jobs')}>← Back to Jobs</button>
+            <div style={styles.formCard}>
+              <h2 style={styles.formTitle}>My Profile</h2>
+              {!user ? (
+                <p style={{ color: '#7a7570' }}>You must be logged in to view your profile.</p>
+              ) : myProfileLoading ? (
+                <p style={{ color: '#7a7570' }}>Loading...</p>
+              ) : !myProfile ? (
+                <div style={styles.formFields}>
+                  <p style={{ color: '#9a9490', fontSize: 15 }}>You haven't created a tech profile yet.</p>
+                  <button style={styles.btnPrimary} onClick={() => setView('techProfile')}>Create Tech Profile</button>
+                </div>
+              ) : (
+                <div style={styles.formFields}>
+                  <div style={styles.detailHeader}>
+                    <div>
+                      <h3 style={{ ...styles.detailTitle, fontSize: 22 }}>{myProfile.name}</h3>
+                      <div style={styles.cardMeta}>
+                        <span>📍 {myProfile.location}</span>
+                        <span>⏱ {myProfile.uxoHours} UXO hrs</span>
+                        <span>✈️ {myProfile.travel}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={styles.divider} />
+
+                  <div style={styles.toggleRow}>
+                    <div style={styles.toggleInfo}>
+                      <div style={styles.toggleTitle}>Open to Work</div>
+                      <div style={styles.toggleSub}>When active, companies can find and contact you.</div>
+                    </div>
+                    <div style={{ ...styles.toggleSwitch, background: myProfile.available ? '#d97706' : '#333' }} onClick={handleToggleAvailability}>
+                      <div style={{ ...styles.toggleKnob, transform: myProfile.available ? 'translateX(24px)' : 'translateX(0)' }} />
+                    </div>
+                  </div>
+                  <div style={styles.availNote}>
+                    {myProfile.available ? '✅ Your profile is visible to hiring companies.' : '🔒 Your profile is hidden from company searches.'}
+                  </div>
+
+                  <div style={styles.divider} />
+                  <h3 style={styles.sectionLabel}>DOD Certifications</h3>
+                  <div style={styles.certTags}>
+                    {myProfile.dodCerts.map(c => <span key={c} style={{ ...styles.certTag, background: CERT_COLORS[c] || '#333' }}>{c}</span>)}
+                  </div>
+                  <h3 style={styles.sectionLabel}>Summary</h3>
+                  <p style={styles.detailDesc}>{myProfile.summary}</p>
+                </div>
+              )}
             </div>
           </div>
         )}
