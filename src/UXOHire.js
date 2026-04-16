@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 
-// Stripe integration pending — job posts saved as pending_payment
+// Stripe Checkout — job posts saved as pending_payment, published after webhook confirms payment
 
 const normalizeJob = (j) => ({
   id: j.id,
@@ -149,6 +149,7 @@ export default function UXOHire({ user: userProp }) {
 
   // Submit error state (profile / job post)
   const [submitError, setSubmitError] = useState('');
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const [profile, setProfile] = useState({
     name: "", email: "", location: "", uxoHours: "", travel: "Nationwide", summary: "",
@@ -189,7 +190,7 @@ export default function UXOHire({ user: userProp }) {
       const { data: jobData } = await supabase
         .from('job_posts')
         .select('*')
-        .in('status', ['published', 'pending_payment'])
+        .eq('status', 'published')
         .order('created_at', { ascending: false });
 
       const { data: techData } = await supabase
@@ -211,10 +212,69 @@ export default function UXOHire({ user: userProp }) {
     }
   }, [view, user]); // eslint-disable-line
 
+  // Pre-fill company name from employer_profiles when opening the post-job form
+  useEffect(() => {
+    if (view === 'postJob' && user) {
+      supabase
+        .from('employer_profiles')
+        .select('company_name')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.company_name) {
+            setJobPost(p => ({ ...p, company: p.company || data.company_name }));
+          }
+        });
+    }
+  }, [view, user]); // eslint-disable-line
+
   useEffect(() => {
     if (user) fetchMyProfile();
     else setMyProfile(null);
   }, [user]); // eslint-disable-line
+
+  // Pre-fill profile form when an existing user navigates to /create-profile
+  useEffect(() => {
+    if (view === 'techProfile' && user) {
+      supabase
+        .from('tech_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            setProfile({
+              name: data.name || '',
+              email: data.email || '',
+              location: data.location || '',
+              uxoHours: data.uxo_hours || '',
+              travel: data.travel || 'Nationwide',
+              summary: data.summary || '',
+              dodCerts: data.dod_certs || [],
+              hazwoper40: data.hazwoper_40 || false,
+              hazwoper40Date: data.hazwoper_40_date || '',
+              hazwoper8: data.hazwoper_8 || false,
+              hazwoper8Date: data.hazwoper_8_date || '',
+              physicalCurrent: data.physical_current || false,
+              physicalDate: data.physical_date || '',
+              militaryEod: data.military_eod || false,
+              clearance: data.clearance || false,
+              clearanceLevel: data.clearance_level || '',
+              diveCert: data.dive_cert || false,
+              driversLicense: data.drivers_license || false,
+              cdl: data.cdl || false,
+            });
+            setOpenToWork(data.open_to_work ?? true);
+            setUploadPaths({
+              resume: data.resume_path || null,
+              certs: data.cert_paths || [],
+              hazwoper8: data.hazwoper8_cert_path || null,
+              physical: data.physical_cert_path || null,
+            });
+          }
+        });
+    }
+  }, [view, user]); // eslint-disable-line
 
   const show8HrQuestion = profile.hazwoper40 && isOlderThanOneYear(profile.hazwoper40Date);
 
@@ -266,7 +326,8 @@ export default function UXOHire({ user: userProp }) {
       hazwoper8_cert_path: uploadPaths.hazwoper8 || null,
       physical_cert_path: uploadPaths.physical || null,
     };
-    const { error } = await supabase.from('tech_profiles').insert(profileData);
+    // Use upsert to handle both create and re-submit (UNIQUE constraint on user_id)
+    const { error } = await supabase.from('tech_profiles').upsert(profileData, { onConflict: 'user_id' });
     if (error) {
       setSubmitError("Something went wrong saving your profile. Please try again.");
     } else {
@@ -278,33 +339,60 @@ export default function UXOHire({ user: userProp }) {
   };
 
   // Upload helper using supabase-js storage
-  const uploadFile = async (file, folder) => {
-    const fileName = `${folder}/${Date.now()}_${file.name}`;
+  // Path is scoped to {userId}/{folder}/... to satisfy the storage SELECT policy:
+  //   (storage.foldername(name))[1] = auth.uid()
+  const uploadFile = async (file, folder, userId) => {
+    const fileName = `${userId}/${folder}/${Date.now()}_${file.name}`;
     const { error } = await supabase.storage.from('uxo-uploads').upload(fileName, file, { upsert: true });
     return error ? { path: null, error } : { path: fileName, error: null };
   };
 
   const handleSubmitJobPost = async () => {
-    const { error } = await supabase.from('job_posts').insert({
-      company: jobPost.company,
-      title: jobPost.title,
-      location: jobPost.location,
-      type: jobPost.type,
-      salary: jobPost.salary,
-      description: jobPost.description,
-      required_certs: jobPost.requiredCerts,
-      preferred_certs: jobPost.preferredCerts,
-      status: 'pending_payment',
-      ...(user ? { user_id: user.id } : {}),
-    });
-    if (error) {
-      setSubmitError("Something went wrong. Please try again.");
-    } else {
-      setView("jobPostSuccess");
-      // Refresh jobs
-      const { data: jobData } = await supabase.from('job_posts').select('*').in('status', ['published', 'pending_payment']).order('created_at', { ascending: false });
-      setJobs((jobData || []).map(normalizeJob));
+    if (!user) {
+      navigate('/login', { state: { returnTo: '/post-job' } });
+      return;
     }
+    setSubmitError('');
+    setPaymentLoading(true);
+
+    // 1. Save job post as pending_payment
+    const { data: insertedJob, error: insertError } = await supabase
+      .from('job_posts')
+      .insert({
+        company: jobPost.company,
+        title: jobPost.title,
+        location: jobPost.location,
+        type: jobPost.type,
+        salary: jobPost.salary,
+        description: jobPost.description,
+        required_certs: jobPost.requiredCerts,
+        preferred_certs: jobPost.preferredCerts,
+        status: 'pending_payment',
+        user_id: user.id,
+      })
+      .select('id')
+      .single();
+
+    if (insertError || !insertedJob) {
+      setSubmitError('Something went wrong saving your job post. Please try again.');
+      setPaymentLoading(false);
+      return;
+    }
+
+    // 2. Create Stripe Checkout session via edge function
+    const { data: checkoutData, error: fnError } = await supabase.functions.invoke(
+      'create-checkout-session',
+      { body: { job_post_id: insertedJob.id } }
+    );
+
+    if (fnError || !checkoutData?.url) {
+      setSubmitError('Payment setup failed. Please contact support.');
+      setPaymentLoading(false);
+      return;
+    }
+
+    // 3. Redirect to Stripe Checkout
+    window.location.href = checkoutData.url;
   };
 
   // Auth handlers
@@ -455,6 +543,12 @@ export default function UXOHire({ user: userProp }) {
                   onClick={() => navigate('/dashboard')}
                 >
                   Dashboard
+                </button>
+                <button
+                  style={{ ...styles.navCTA, background: '#1a1408', border: '1px solid #78716c', color: '#a8a29e', marginLeft: 4 }}
+                  onClick={() => navigate('/employer-dashboard')}
+                >
+                  Employer Hub
                 </button>
                 <button style={styles.navLink} onClick={handleSignOut}>Log Out</button>
               </>
@@ -818,7 +912,7 @@ export default function UXOHire({ user: userProp }) {
                                   const file = e.target.files[0];
                                   if (file) {
                                     setUploadStatus(s => ({ ...s, hazwoper8: 'uploading' }));
-                                    const { path, error } = await uploadFile(file, 'certs');
+                                    const { path, error } = await uploadFile(file, 'certs', user.id);
                                     setUploadStatus(s => ({ ...s, hazwoper8: error ? 'error' : 'success' }));
                                     if (path) setUploadPaths(p => ({ ...p, hazwoper8: path }));
                                   }
@@ -855,7 +949,7 @@ export default function UXOHire({ user: userProp }) {
                                 const file = e.target.files[0];
                                 if (file) {
                                   setUploadStatus(s => ({ ...s, physical: 'uploading' }));
-                                  const { path, error } = await uploadFile(file, 'physicals');
+                                  const { path, error } = await uploadFile(file, 'physicals', user.id);
                                   setUploadStatus(s => ({ ...s, physical: error ? 'error' : 'success' }));
                                   if (path) setUploadPaths(p => ({ ...p, physical: path }));
                                 }
@@ -941,7 +1035,7 @@ export default function UXOHire({ user: userProp }) {
                           let anyError = false;
                           const newPaths = [];
                           for (const file of files) {
-                            const { path, error } = await uploadFile(file, 'certs');
+                            const { path, error } = await uploadFile(file, 'certs', user.id);
                             if (error) { anyError = true; } else if (path) { newPaths.push(path); }
                           }
                           setUploadStatus(s => ({ ...s, certs: anyError ? 'error' : 'success' }));
@@ -961,7 +1055,7 @@ export default function UXOHire({ user: userProp }) {
                           const file = e.target.files[0];
                           if (file) {
                             setUploadStatus(s => ({ ...s, resume: 'uploading' }));
-                            const { path, error } = await uploadFile(file, 'resumes');
+                            const { path, error } = await uploadFile(file, 'resumes', user.id);
                             setUploadStatus(s => ({ ...s, resume: error ? 'error' : 'success' }));
                             if (path) setUploadPaths(p => ({ ...p, resume: path }));
                           }
@@ -995,7 +1089,7 @@ export default function UXOHire({ user: userProp }) {
                       </div>
                       <div style={styles.formRow}>
                         <button style={styles.btnSecondary} onClick={() => setProfileStep(2)}>← Back</button>
-                        <button style={styles.btnPrimary} onClick={handleSubmitProfile}>Submit Profile ✓</button>
+                        <button style={styles.btnPrimary} onClick={handleSubmitProfile}>{myProfile ? 'Update Profile ✓' : 'Submit Profile ✓'}</button>
                       </div>
                       {submitError && <div style={styles.errorMsg}>⚠️ {submitError}</div>}
                     </div>
@@ -1087,7 +1181,9 @@ export default function UXOHire({ user: userProp }) {
                   </div>
                   <div style={styles.formRow}>
                     <button style={styles.btnSecondary} onClick={() => setPostStep(2)}>← Back</button>
-                    <button style={styles.btnPrimary} onClick={handleSubmitJobPost}>Submit Job Post →</button>
+                    <button style={styles.btnPrimary} onClick={handleSubmitJobPost} disabled={paymentLoading}>
+                      {paymentLoading ? 'Redirecting to payment...' : 'Submit & Pay $149 →'}
+                    </button>
                   </div>
                   {submitError && <div style={styles.errorMsg}>⚠️ {submitError}</div>}
                 </div>
@@ -1096,18 +1192,25 @@ export default function UXOHire({ user: userProp }) {
           </div>
         )}
 
-        {/* JOB POST SUCCESS */}
+        {/* JOB POST SUCCESS — shown after Stripe redirects back with ?session_id=xxx */}
         {view === "jobPostSuccess" && (
           <div style={styles.formWrap}>
             <div style={styles.successCard}>
               <div style={styles.successIcon}>🎯</div>
-              <h2 style={styles.successTitle}>Job Post Received!</h2>
+              <h2 style={styles.successTitle}>Payment Received!</h2>
               <p style={styles.successMsg}>
-                Your job posting has been saved. To publish it and make it visible to techs,
-                complete payment of $149/30 days. You'll receive payment instructions via email shortly.
+                Your payment is being processed. Your job listing will be published and visible
+                to techs within a few minutes once our system confirms the payment.
               </p>
-              <button style={styles.btnPrimary} onClick={() => { setView("jobs"); setPostStep(1); setJobPost({ company: "", title: "", location: "", type: "Contract", salary: "", description: "", requiredCerts: [], preferredCerts: [] }); }}>
-                Back to Jobs
+              <p style={{ color: '#9a9490', fontSize: 13, margin: '0 0 20px' }}>
+                You'll be able to manage your listing from the employer dashboard once it's live.
+              </p>
+              <button style={styles.btnPrimary} onClick={() => {
+                setPostStep(1);
+                setJobPost({ company: "", title: "", location: "", type: "Contract", salary: "", description: "", requiredCerts: [], preferredCerts: [] });
+                setView("jobs");
+              }}>
+                Browse Active Listings
               </button>
             </div>
           </div>
@@ -1210,6 +1313,10 @@ export default function UXOHire({ user: userProp }) {
                   </div>
                   <h3 style={styles.sectionLabel}>Summary</h3>
                   <p style={styles.detailDesc}>{myProfile.summary}</p>
+
+                  <button style={styles.btnPrimary} onClick={() => navigate('/create-profile')}>
+                    Edit Profile →
+                  </button>
                 </div>
               )}
             </div>

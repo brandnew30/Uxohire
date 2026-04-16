@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import UXOHire from './UXOHire';
 import TechDashboard from './TechDashboard';
+import EmployerDashboard from './EmployerDashboard';
 
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = loading
@@ -23,13 +24,22 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Dashboard — protected; redirect to /login if not authenticated */}
+        {/* Tech dashboard — protected */}
         <Route
           path="/dashboard"
           element={
             user
               ? <TechDashboard user={user} />
               : <Navigate to="/login" replace state={{ returnTo: '/dashboard' }} />
+          }
+        />
+        {/* Employer hub — protected */}
+        <Route
+          path="/employer-dashboard"
+          element={
+            user
+              ? <EmployerDashboard user={user} />
+              : <Navigate to="/login" replace state={{ returnTo: '/employer-dashboard' }} />
           }
         />
         {/* Everything else handled by UXOHire (includes its own routing) */}
