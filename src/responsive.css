@@ -340,6 +340,64 @@ body, html {
   }
 }
 
+/* ========== TECH DASHBOARD — CLASS-BASED MOBILE OVERRIDES ========== */
+
+/* Tab bar: allow horizontal scroll on mobile, never wrap */
+.td-tab-bar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.td-tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Tab bar tightens padding on mobile */
+  .td-tab-bar {
+    padding: 8px 12px 0 !important;
+    gap: 2px !important;
+  }
+
+  /* Individual tabs at mobile size */
+  .td-tab {
+    padding: 8px 12px 10px !important;
+    font-size: 14px !important;
+    min-height: 44px !important;
+  }
+
+  /* Active tab stays bold and distinct */
+  .td-tab.td-tab-active {
+    font-weight: bold !important;
+  }
+
+  /* Body section padding at mobile */
+  .td-body {
+    padding: 20px 16px 60px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  /* At exact iPhone 14 width — ensure tab labels don't get cut off */
+  .td-tab {
+    padding: 8px 10px 10px !important;
+    font-size: 13px !important;
+  }
+
+  /* Tab label text hidden only below 360px */
+}
+
+@media (max-width: 360px) {
+  /* Very narrow phones: icon-only tabs */
+  .td-tab-label {
+    display: none !important;
+  }
+
+  .td-tab {
+    padding: 8px 14px 10px !important;
+    font-size: 18px !important; /* emoji size */
+  }
+}
+
 /* ========== DASHBOARD SPECIFIC ========== */
 @media (max-width: 768px) {
   /* TechDashboard and EmployerDashboard responsive */
@@ -347,16 +405,7 @@ body, html {
     max-width: 100% !important;
   }
 
-  /* Adjust padding for dashboard containers */
-  [style*="padding: \"16px 20px\""],
-  [style*="padding: \"0 20px\""],
-  [style*="padding: \"28px 20px"],
-  [style*="padding: \"12px 20px"],
-  [style*="padding: \"0 24px"] {
-    padding: 0 16px !important;
-  }
-
-  /* Responsive grid for certs and jobs */
+  /* Responsive grid for certs and jobs — ensure single column on mobile */
   [style*="gridTemplateColumns: \"repeat(auto-fill, minmax(280px, 1fr))\""],
   [style*="gridTemplateColumns: \"repeat(auto-fill, minmax(320px, 1fr))\""] {
     grid-template-columns: 1fr !important;
@@ -366,12 +415,6 @@ body, html {
   [style*="gridTemplateColumns: \"1fr 1fr\""],
   [style*="gridTemplateColumns: \"repeat(2, 1fr)\""] {
     grid-template-columns: 1fr !important;
-  }
-
-  /* Dashboard tabs responsive */
-  [style*="display: \"flex\""][style*="gap"] {
-    gap: 4px !important;
-    flex-wrap: wrap !important;
   }
 }
 

@@ -304,20 +304,21 @@ export default function TechDashboard({ user }) {
       )}
 
       {/* ── Nav tabs ── */}
-      <div style={s.tabBar}>
+      <div style={s.tabBar} className="td-tab-bar">
         {navItems.map(item => (
           <button
             key={item.id}
+            className={"td-tab" + (activeSection === item.id ? " td-tab-active" : "")}
             style={{ ...s.tab, ...(activeSection === item.id ? s.tabActive : {}) }}
             onClick={() => setActiveSection(item.id)}
           >
             <span style={s.tabIcon}>{item.icon}</span>
-            <span style={s.tabLabel}>{item.label}</span>
+            <span className="td-tab-label" style={s.tabLabel}>{item.label}</span>
           </button>
         ))}
       </div>
 
-      <div style={s.body}>
+      <div style={s.body} className="td-body">
 
         {/* ═══════════════════════════════════════════════════
             SECTION 1 — JOB MATCH DASHBOARD
@@ -669,10 +670,12 @@ const s = {
   header:        { background: "#111316", borderBottom: "1px solid #222",
                    padding: "0 0 0 0", position: "sticky", top: 0, zIndex: 100 },
   headerInner:   { maxWidth: 900, margin: "0 auto", padding: "16px 20px",
-                   display: "flex", alignItems: "center", justifyContent: "space-between" },
+                   display: "flex", alignItems: "center", justifyContent: "space-between",
+                   flexWrap: "wrap", gap: 8 },
   headerLabel:   { fontSize: 11, color: "#6a6660", textTransform: "uppercase",
                    letterSpacing: "0.1em", marginBottom: 2 },
-  headerName:    { fontSize: 20, fontWeight: "bold", letterSpacing: "-0.3px" },
+  headerName:    { fontSize: 20, fontWeight: "bold", letterSpacing: "-0.3px",
+                   overflowWrap: "break-word", wordBreak: "break-word" },
   headerRight:   { display: "flex", alignItems: "center", gap: 12 },
   backBtn:       { background: "none", border: "1px solid #333", color: "#9a9490",
                    cursor: "pointer", padding: "6px 14px", fontSize: 13,
@@ -685,23 +688,28 @@ const s = {
   notifBanner:   { background: "#2a1e08", border: "1px solid #fbbf24", borderRadius: 8,
                    padding: "12px 16px", fontSize: 13, color: "#fbbf24",
                    marginBottom: 8, display: "flex", justifyContent: "space-between",
-                   alignItems: "center", gap: 12 },
+                   alignItems: "center", gap: 12, overflowWrap: "break-word",
+                   wordBreak: "break-word" },
   notifBannerUrgent: { background: "#2a0a0a", border: "1px solid #f87171", color: "#f87171" },
   notifDismiss:  { background: "none", border: "none", color: "inherit",
                    cursor: "pointer", fontSize: 16, padding: "0 4px", lineHeight: 1 },
   tabBar:        { maxWidth: 900, margin: "0 auto", padding: "12px 20px 0",
-                   display: "flex", gap: 4, borderBottom: "1px solid #1e2022" },
-  tab:           { background: "none", border: "none", color: "#7a7570", cursor: "pointer",
-                   padding: "8px 16px 12px", fontSize: 14, fontFamily: "inherit",
+                   display: "flex", gap: 4, borderBottom: "1px solid #1e2022",
+                   overflowX: "auto", WebkitOverflowScrolling: "touch" },
+  tab:           { background: "none", border: "none", color: "#9a9590", cursor: "pointer",
+                   padding: "8px 16px 12px", fontSize: 15, fontFamily: "inherit",
                    borderBottom: "2px solid transparent", display: "flex",
-                   alignItems: "center", gap: 6, transition: "color 0.15s" },
-  tabActive:     { color: "#e8e4dc", borderBottom: "2px solid #d97706" },
-  tabIcon:       { fontSize: 15 },
-  tabLabel:      {},
+                   alignItems: "center", gap: 6, transition: "color 0.15s",
+                   minHeight: 44, flexShrink: 0, whiteSpace: "nowrap" },
+  tabActive:     { color: "#e8e4dc", borderBottom: "2px solid #d97706", fontWeight: "bold" },
+  tabIcon:       { fontSize: 16 },
+  tabLabel:      { lineHeight: 1.2 },
   body:          { maxWidth: 900, margin: "0 auto", padding: "28px 20px 60px" },
 
-  sectionHeader: { display: "flex", alignItems: "baseline", gap: 12, marginBottom: 20 },
-  sectionTitle:  { fontSize: 22, fontWeight: "bold", margin: 0, letterSpacing: "-0.3px" },
+  sectionHeader: { display: "flex", alignItems: "baseline", gap: 12, marginBottom: 20,
+                   flexWrap: "wrap" },
+  sectionTitle:  { fontSize: 22, fontWeight: "bold", margin: 0, letterSpacing: "-0.3px",
+                   overflowWrap: "break-word", wordBreak: "break-word" },
   sectionSub:    { color: "#6a6660", fontSize: 13 },
 
   // Job match
@@ -709,11 +717,14 @@ const s = {
   jobCard:       { background: "#111316", border: "1px solid #1e2022", borderRadius: 10,
                    padding: "20px 22px" },
   jobCardTop:    { display: "flex", justifyContent: "space-between",
-                   alignItems: "flex-start", marginBottom: 14 },
+                   alignItems: "flex-start", marginBottom: 14, flexWrap: "wrap", gap: 10 },
   jobCompany:    { fontSize: 11, color: "#7a7570", textTransform: "uppercase",
-                   letterSpacing: "0.06em", marginBottom: 3 },
-  jobTitle:      { fontSize: 18, fontWeight: "bold", lineHeight: 1.3, marginBottom: 6 },
-  jobMeta:       { display: "flex", gap: 14, fontSize: 12, color: "#7a7570", flexWrap: "wrap" },
+                   letterSpacing: "0.06em", marginBottom: 3,
+                   overflowWrap: "break-word", wordBreak: "break-word" },
+  jobTitle:      { fontSize: 18, fontWeight: "bold", lineHeight: 1.4, marginBottom: 6,
+                   overflowWrap: "break-word", wordBreak: "break-word" },
+  jobMeta:       { display: "flex", gap: 14, fontSize: 12, color: "#7a7570", flexWrap: "wrap",
+                   lineHeight: 1.5 },
   matchSection:  { marginTop: 10 },
   matchLabel:    { fontSize: 11, color: "#6a6660", textTransform: "uppercase",
                    letterSpacing: "0.06em", marginBottom: 5 },
@@ -730,30 +741,34 @@ const s = {
 
   // Cert tracker
   certGrid:      { display: "grid",
-                   gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                   gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))",
                    gap: 12 },
   certCard:      { background: "#111316", border: "1px solid #1e2022", borderRadius: 8,
                    padding: "14px 16px" },
   certCardTop:   { display: "flex", justifyContent: "space-between",
-                   alignItems: "flex-start", gap: 8, marginBottom: 6 },
-  certCardLabel: { fontSize: 13, fontWeight: "bold", lineHeight: 1.3 },
+                   alignItems: "flex-start", gap: 8, marginBottom: 6, flexWrap: "wrap" },
+  certCardLabel: { fontSize: 13, fontWeight: "bold", lineHeight: 1.4,
+                   flex: 1, minWidth: 0, overflowWrap: "break-word", wordBreak: "break-word" },
   certCardMeta:  { display: "flex", flexDirection: "column", gap: 3, fontSize: 12,
-                   color: "#7a7570" },
+                   color: "#7a7570", lineHeight: 1.5 },
 
   // Career
   levelHero:     { background: "#111316", border: "1px solid #d97706", borderRadius: 12,
-                   padding: "24px 28px", marginBottom: 20 },
+                   padding: "24px 28px", marginBottom: 20, overflowWrap: "break-word" },
   levelBadgeWrap:{ marginBottom: 8 },
   levelBadge:    { display: "inline-block", background: "#1a1408",
                    border: "1px solid #d97706", color: "#d97706",
                    fontSize: 16, fontWeight: "bold", padding: "4px 16px",
-                   borderRadius: 20, marginBottom: 8 },
-  levelHours:    { fontSize: 24, fontWeight: "bold", letterSpacing: "-0.5px" },
-  levelNext:     { fontSize: 14 },
+                   borderRadius: 20, marginBottom: 8, overflowWrap: "break-word",
+                   maxWidth: "100%" },
+  levelHours:    { fontSize: 24, fontWeight: "bold", letterSpacing: "-0.5px",
+                   overflowWrap: "break-word" },
+  levelNext:     { fontSize: 14, lineHeight: 1.6, overflowWrap: "break-word",
+                   flexWrap: "wrap" },
   progressWrap:  { background: "#111316", border: "1px solid #1e2022",
                    borderRadius: 10, padding: "20px 22px", marginBottom: 20 },
   progressMeta:  { display: "flex", justifyContent: "space-between",
-                   marginBottom: 10, flexWrap: "wrap", gap: 4 },
+                   marginBottom: 10, flexWrap: "wrap", gap: 8, rowGap: 6 },
   progressTrack: { background: "#1e2022", borderRadius: 8, height: 14, overflow: "hidden" },
   progressFill:  { height: "100%", background: "linear-gradient(90deg, #d97706, #f59e0b)",
                    borderRadius: 8, transition: "width 0.6s ease" },
@@ -763,9 +778,10 @@ const s = {
                    color: "#6a6660", padding: "14px 18px",
                    borderBottom: "1px solid #1e2022" },
   levelRow:      { display: "flex", alignItems: "center", justifyContent: "space-between",
-                   padding: "13px 18px", borderBottom: "1px solid #1a1c1e" },
+                   padding: "13px 18px", borderBottom: "1px solid #1a1c1e",
+                   flexWrap: "wrap", gap: 6 },
   levelRowActive:{ background: "#1a1408" },
-  levelRowLeft:  { display: "flex", alignItems: "center", gap: 10 },
+  levelRowLeft:  { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" },
   levelRowDot:   { width: 24, height: 24, borderRadius: "50%",
                    display: "flex", alignItems: "center", justifyContent: "center",
                    fontSize: 11, fontWeight: "bold", color: "#0d0f10", flexShrink: 0 },
