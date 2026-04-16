@@ -124,6 +124,9 @@ export default function UXOHire({ user: userProp }) {
   const [authLoading, setAuthLoading] = useState(false);
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
 
+  // Mobile hamburger menu state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // My Profile state
   const [myProfile, setMyProfile] = useState(null);
   const [myProfileLoading, setMyProfileLoading] = useState(false);
@@ -521,12 +524,14 @@ export default function UXOHire({ user: userProp }) {
   return (
     <div style={styles.root}>
       <nav style={styles.nav}>
-        <div style={styles.navInner}>
+        <div style={styles.navInner} data-nav-inner>
           <div style={styles.logo} onClick={() => { setView("jobs"); setProfileSubmitted(false); }}>
             <span style={styles.logoIcon}>⬡</span>
             <span style={styles.logoText}>UXO<span style={styles.logoAccent}>hire</span></span>
           </div>
-          <div style={styles.navLinks}>
+
+          {/* Desktop Navigation */}
+          <div style={styles.navLinks} data-nav-links>
             <button style={view === "jobs" ? styles.navLinkActive : styles.navLink} onClick={() => setView("jobs")}>Browse Jobs</button>
             <button style={view === "techs" ? styles.navLinkActive : styles.navLink} onClick={() => setView("techs")}>Find Techs</button>
             <button style={styles.navCTA} onClick={() => setView("postJob")}>Post a Job →</button>
@@ -554,10 +559,60 @@ export default function UXOHire({ user: userProp }) {
               </>
             )}
           </div>
+
+          {/* Mobile Hamburger Menu Button */}
+          <button
+            data-hamburger-menu
+            style={{
+              display: 'none',
+              background: 'none',
+              border: 'none',
+              color: '#d97706',
+              fontSize: 24,
+              cursor: 'pointer',
+              padding: '0 8px',
+              fontFamily: 'inherit'
+            }}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            ☰
+          </button>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <div style={styles.navLinks} data-mobile-nav>
+            <button style={view === "jobs" ? styles.navLinkActive : styles.navLink} onClick={() => { setView("jobs"); setMobileMenuOpen(false); }}>Browse Jobs</button>
+            <button style={view === "techs" ? styles.navLinkActive : styles.navLink} onClick={() => { setView("techs"); setMobileMenuOpen(false); }}>Find Techs</button>
+            <button style={styles.navCTA} onClick={() => { setView("postJob"); setMobileMenuOpen(false); }}>Post a Job</button>
+            {!user ? (
+              <>
+                <button style={styles.navLink} onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}>Log In</button>
+                <button style={{ ...styles.navCTA, background: '#d97706' }} onClick={() => { navigate('/signup'); setMobileMenuOpen(false); }}>Sign Up</button>
+              </>
+            ) : (
+              <>
+                <span style={{ color: '#7a7570', fontSize: 13, padding: '16px 24px', display: 'block' }}>Signed in as: {user.email}</span>
+                <button
+                  style={{ ...styles.navCTA, background: '#1a1408', border: '1px solid #d97706', color: '#d97706' }}
+                  onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}
+                >
+                  Dashboard
+                </button>
+                <button
+                  style={{ ...styles.navCTA, background: '#1a1408', border: '1px solid #78716c', color: '#a8a29e' }}
+                  onClick={() => { navigate('/employer-dashboard'); setMobileMenuOpen(false); }}
+                >
+                  Employer Hub
+                </button>
+                <button style={styles.navLink} onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}>Log Out</button>
+              </>
+            )}
+          </div>
+        )}
       </nav>
 
-      <main style={styles.main}>
+      <main style={styles.main} data-main-container>
 
         {authSuccessMsg && (
           <div style={{ background: '#1a4a2e', border: '1px solid #4ade80', borderRadius: 8, padding: '14px 18px', color: '#4ade80', fontSize: 14, margin: '16px 0 0' }}>
@@ -568,24 +623,24 @@ export default function UXOHire({ user: userProp }) {
         {/* JOBS VIEW */}
         {view === "jobs" && !activeJob && (
           <div>
-            <div style={styles.hero}>
+            <div style={styles.hero} data-hero>
               <div style={styles.heroBadge}>The UXO Industry's Job Board</div>
-              <h1 style={styles.heroTitle}>Find Your Next<br /><span style={styles.heroAccent}>UXO Assignment</span></h1>
-              <p style={styles.heroSub}>Connecting certified UXO technicians with the companies that need them most.</p>
-              <div style={styles.heroActions}>
-                <button style={styles.btnPrimary} onClick={goToCreateProfile}>Create Tech Profile</button>
-                <button style={styles.btnSecondary} onClick={() => setView("postJob")}>Post a Job</button>
+              <h1 style={styles.heroTitle} data-hero-title>Find Your Next<br /><span style={styles.heroAccent}>UXO Assignment</span></h1>
+              <p style={styles.heroSub} data-hero-subtitle>Connecting certified UXO technicians with the companies that need them most.</p>
+              <div style={styles.heroActions} data-hero-actions>
+                <button style={styles.btnPrimary} data-btn-primary onClick={goToCreateProfile}>Create Tech Profile</button>
+                <button style={styles.btnSecondary} data-btn-secondary onClick={() => setView("postJob")}>Post a Job</button>
               </div>
             </div>
-            <div style={styles.filterBar}>
-              <select style={styles.filterSelect} value={filterCert} onChange={e => setFilterCert(e.target.value)}>
+            <div style={styles.filterBar} data-filter-bar>
+              <select style={styles.filterSelect} data-filter-select value={filterCert} onChange={e => setFilterCert(e.target.value)}>
                 <option value="">All Certifications</option>
                 {ALL_CERT_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <input style={styles.filterInput} placeholder="Filter by location..." value={filterLocation} onChange={e => setFilterLocation(e.target.value)} />
-              <span style={styles.filterCount}>{filteredJobs.length} positions</span>
+              <input style={styles.filterInput} data-filter-input placeholder="Filter by location..." value={filterLocation} onChange={e => setFilterLocation(e.target.value)} />
+              <span style={styles.filterCount} data-filter-count>{filteredJobs.length} positions</span>
             </div>
-            <div style={styles.cardGrid}>
+            <div style={styles.cardGrid} data-card-grid>
               {dataLoading && (
                 <div style={{ color: '#7a7570', fontSize: 14, padding: '20px 0' }}>Loading listings...</div>
               )}
@@ -628,9 +683,9 @@ export default function UXOHire({ user: userProp }) {
 
         {/* JOB DETAIL */}
         {view === "jobs" && activeJob && (
-          <div style={styles.detailWrap}>
+          <div style={styles.detailWrap} data-detail-wrap>
             <button style={styles.backBtn} onClick={() => { setActiveJob(null); setApplyView(false); setApplySuccess(false); }}>← Back to Jobs</button>
-            <div style={styles.detailCard}>
+            <div style={styles.detailCard} data-detail-card>
               <div style={styles.detailHeader}>
                 <div>
                   <div style={styles.cardCompany}>{activeJob.company}</div>
@@ -736,9 +791,9 @@ export default function UXOHire({ user: userProp }) {
 
         {/* TECH DETAIL */}
         {view === "techs" && activeTech && (
-          <div style={styles.detailWrap}>
+          <div style={styles.detailWrap} data-detail-wrap>
             <button style={styles.backBtn} onClick={() => { setActiveTech(null); setContactView(false); setContactSuccess(false); }}>← Back to Techs</button>
-            <div style={styles.detailCard}>
+            <div style={styles.detailCard} data-detail-card>
               <div style={styles.detailHeader}>
                 <div>
                   <h2 style={styles.detailTitle}>{activeTech.name}</h2>
@@ -812,9 +867,9 @@ export default function UXOHire({ user: userProp }) {
 
         {/* TECH PROFILE CREATION */}
         {view === "techProfile" && (
-          <div style={styles.formWrap}>
+          <div style={styles.formWrap} data-form-wrap>
             {profileSubmitted ? (
-              <div style={styles.successCard}>
+              <div style={styles.successCard} data-success-card>
                 <div style={styles.successIcon}>✅</div>
                 <h2 style={styles.successTitle}>Profile Submitted!</h2>
                 <p style={styles.successMsg}>Your profile is now live. Companies searching for qualified UXO techs will be able to find you when you're open to work. Check your email for a confirmation.</p>
@@ -828,7 +883,7 @@ export default function UXOHire({ user: userProp }) {
                     {notifications.map((n, i) => <div key={i} style={styles.notifBanner}>{n}</div>)}
                   </div>
                 )}
-                <div style={styles.formCard}>
+                <div style={styles.formCard} data-form-card>
                   <div style={styles.formSteps}>
                     {[1, 2, 3].map(s => (
                       <div key={s} style={{ ...styles.step, ...(profileStep >= s ? styles.stepActive : {}) }}>{s}</div>
@@ -1102,9 +1157,9 @@ export default function UXOHire({ user: userProp }) {
 
         {/* POST A JOB */}
         {view === "postJob" && (
-          <div style={styles.formWrap}>
+          <div style={styles.formWrap} data-form-wrap>
             <button style={styles.backBtn} onClick={() => setView("jobs")}>← Back</button>
-            <div style={styles.formCard}>
+            <div style={styles.formCard} data-form-card>
               <div style={styles.formSteps}>
                 {[1, 2, 3].map(s => (
                   <div key={s} style={{ ...styles.step, ...(postStep >= s ? styles.stepActive : {}) }}>{s}</div>
@@ -1194,8 +1249,8 @@ export default function UXOHire({ user: userProp }) {
 
         {/* JOB POST SUCCESS — shown after Stripe redirects back with ?session_id=xxx */}
         {view === "jobPostSuccess" && (
-          <div style={styles.formWrap}>
-            <div style={styles.successCard}>
+          <div style={styles.formWrap} data-form-wrap>
+            <div style={styles.successCard} data-success-card>
               <div style={styles.successIcon}>🎯</div>
               <h2 style={styles.successTitle}>Payment Received!</h2>
               <p style={styles.successMsg}>
@@ -1218,9 +1273,9 @@ export default function UXOHire({ user: userProp }) {
 
         {/* LOGIN VIEW */}
         {view === 'login' && (
-          <div style={styles.formWrap}>
+          <div style={styles.formWrap} data-form-wrap>
             <button style={styles.backBtn} onClick={() => { setView('jobs'); setAuthError(''); }}>← Back</button>
-            <div style={styles.formCard}>
+            <div style={styles.formCard} data-form-card>
               <h2 style={styles.formTitle}>Log In</h2>
               <div style={styles.formFields}>
                 <label style={styles.label}>Email</label>
@@ -1242,9 +1297,9 @@ export default function UXOHire({ user: userProp }) {
 
         {/* SIGNUP VIEW */}
         {view === 'signup' && (
-          <div style={styles.formWrap}>
+          <div style={styles.formWrap} data-form-wrap>
             <button style={styles.backBtn} onClick={() => { setView('jobs'); setAuthError(''); }}>← Back</button>
-            <div style={styles.formCard}>
+            <div style={styles.formCard} data-form-card>
               <h2 style={styles.formTitle}>Create Account</h2>
               <div style={styles.formFields}>
                 <label style={styles.label}>Email</label>
@@ -1266,9 +1321,9 @@ export default function UXOHire({ user: userProp }) {
 
         {/* MY PROFILE VIEW */}
         {view === 'myProfile' && (
-          <div style={styles.formWrap}>
+          <div style={styles.formWrap} data-form-wrap>
             <button style={styles.backBtn} onClick={() => setView('jobs')}>← Back to Jobs</button>
-            <div style={styles.formCard}>
+            <div style={styles.formCard} data-form-card>
               <h2 style={styles.formTitle}>My Profile</h2>
               {!user ? (
                 <p style={{ color: '#7a7570' }}>You must be logged in to view your profile.</p>
