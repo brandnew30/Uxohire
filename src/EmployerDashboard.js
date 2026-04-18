@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
+import Navbar from "./components/Navbar";
 
 const JOB_STATUS_META = {
   published:       { bg: '#0a2a1a', color: '#4ade80',  label: 'Published' },
@@ -115,44 +116,33 @@ export default function EmployerDashboard({ user }) {
 
   // ────────────────────────────────────────────────────────────────────────────
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
+
   return (
     <div style={s.root}>
-      {/* ── Header ── */}
-      <nav style={s.nav}>
-        <div style={s.navInner}>
-          <div style={s.logo} onClick={() => navigate('/')}>
-            <span style={s.logoIcon}>⬡</span>
-            <span style={s.logoText}>UXO<span style={s.logoAccent}>hire</span></span>
-          </div>
-          <div style={s.navLinks}>
-            <button style={s.navLink} onClick={() => navigate('/')}>Browse Jobs</button>
-            <button style={s.navLink} onClick={() => navigate('/post-job')}>Post a Job →</button>
-            <span style={s.navEmail}>{user.email}</span>
-            <button style={{ ...s.navCTA, background: '#1a1408', border: '1px solid #d97706', color: '#d97706' }}
-              onClick={() => navigate('/dashboard')}>Tech Dashboard</button>
-            <button style={s.navLink} onClick={async () => {
-              await supabase.auth.signOut();
-              navigate('/');
-            }}>Log Out</button>
-          </div>
-        </div>
-      </nav>
+      <Navbar view="employerDashboard" setView={(v) => navigate(v === 'jobs' ? '/' : `/${v}`)}
+        user={user} navigate={navigate} onSignOut={handleSignOut} />
 
-      <main style={s.main}>
+      <main style={s.main} data-main-container>
         <div style={s.pageHeader}>
-          <h1 style={s.pageTitle}>Employer Hub</h1>
-          <p style={s.pageSub}>Manage your job posts, applicants, and tech outreach.</p>
+          <h1 style={s.pageTitle} data-page-title>Employer Hub</h1>
+          <p style={s.pageSub} data-page-subtitle>Manage your job posts, applicants, and tech outreach.</p>
         </div>
 
         {/* ── Tab bar ── */}
-        <div style={s.tabs}>
+        <div style={s.tabs} className="ed-tab-bar">
           {['posts', 'contacts'].map(t => (
             <button
               key={t}
+              className={"ed-tab" + (tab === t ? " ed-tab-active" : "")}
               style={tab === t ? s.tabActive : s.tab}
               onClick={() => setTab(t)}
             >
-              {t === 'posts' ? 'My Posts & Applicants' : 'Contact Inbox'}
+              <span className="ed-tab-icon">{t === 'posts' ? '\uD83D\uDCCB' : '\uD83D\uDCE8'}</span>
+              <span className="ed-tab-label">{t === 'posts' ? 'Posts & Applicants' : 'Contact Inbox'}</span>
             </button>
           ))}
         </div>
@@ -183,7 +173,7 @@ export default function EmployerDashboard({ user }) {
               return (
                 <div key={post.id} style={s.postCard}>
                   {/* ── Post row ── */}
-                  <div style={s.postRow}>
+                  <div style={s.postRow} className="ed-post-row">
                     <div style={s.postInfo}>
                       <div style={s.postTitle}>{post.title}</div>
                       <div style={s.postMeta}>
@@ -193,7 +183,7 @@ export default function EmployerDashboard({ user }) {
                         </span>
                       </div>
                     </div>
-                    <div style={s.postActions}>
+                    <div style={s.postActions} className="ed-post-actions">
                       <StatusBadge status={post.status} meta={JOB_STATUS_META} />
 
                       <button style={s.btnSmall} onClick={() => togglePost(post.id)}>
@@ -307,16 +297,6 @@ export default function EmployerDashboard({ user }) {
 // ── Styles ───────────────────────────────────────────────────────────────────
 const s = {
   root: { fontFamily: "'Georgia', 'Times New Roman', serif", background: '#0d0f10', color: '#e8e4dc', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
-  nav: { background: '#111316', borderBottom: '1px solid #222', position: 'sticky', top: 0, zIndex: 100 },
-  navInner: { maxWidth: 1100, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  logo: { display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' },
-  logoIcon: { fontSize: 22, color: '#d97706' },
-  logoText: { fontSize: 22, fontWeight: 'bold', letterSpacing: '-0.5px', color: '#e8e4dc' },
-  logoAccent: { color: '#d97706' },
-  navLinks: { display: 'flex', alignItems: 'center', gap: 8 },
-  navLink: { background: 'none', border: 'none', color: '#9a9490', cursor: 'pointer', padding: '8px 14px', fontSize: 15, borderRadius: 6, fontFamily: 'inherit' },
-  navCTA: { background: '#d97706', border: 'none', color: '#0d0f10', cursor: 'pointer', padding: '8px 18px', fontSize: 14, borderRadius: 6, fontWeight: 'bold', fontFamily: 'inherit', marginLeft: 8 },
-  navEmail: { color: '#7a7570', fontSize: 13, padding: '0 8px', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   main: { flex: 1, maxWidth: 1100, margin: '0 auto', padding: '0 24px 60px', width: '100%', boxSizing: 'border-box' },
 
   pageHeader: { padding: '40px 0 24px' },
@@ -328,11 +308,13 @@ const s = {
     background: 'none', border: 'none', borderBottom: '2px solid transparent',
     color: '#7a7570', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
     fontWeight: 'bold', padding: '10px 18px', marginBottom: -1,
+    display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
   },
   tabActive: {
     background: 'none', border: 'none', borderBottom: '2px solid #d97706',
     color: '#d97706', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
     fontWeight: 'bold', padding: '10px 18px', marginBottom: -1,
+    display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
   },
 
   empty:     { color: '#7a7570', fontSize: 14, padding: '24px 0' },
