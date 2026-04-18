@@ -1,11 +1,13 @@
 import { useState } from "react";
 import styles from "../styles/theme";
 
-export default function Navbar({ view, setView, user, navigate, onSignOut }) {
+export default function Navbar({ view, setView, user, myProfile, navigate, onSignOut }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navTo = (v) => { setView(v); setMobileMenuOpen(false); };
   const navPath = (path) => { navigate(path); setMobileMenuOpen(false); };
+
+  const displayName = myProfile?.name || user?.email || '';
 
   return (
     <nav style={styles.nav}>
@@ -27,28 +29,80 @@ export default function Navbar({ view, setView, user, navigate, onSignOut }) {
             </>
           ) : (
             <>
-              <span style={{ color: '#7a7570', fontSize: 13, padding: '0 8px', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
-              <button style={{ ...styles.navCTA, background: '#1a1408', border: '1px solid #d97706', color: '#d97706' }} onClick={() => navigate('/dashboard')}>Dashboard</button>
-              <button style={{ ...styles.navCTA, background: '#1a1408', border: '1px solid #78716c', color: '#a8a29e', marginLeft: 4 }} onClick={() => navigate('/employer-dashboard')}>Employer Hub</button>
-              <button style={styles.navLink} onClick={onSignOut}>Log Out</button>
+              <span style={{
+                color: '#d97706', fontSize: 13, fontWeight: 'bold', padding: '0 10px',
+                maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                borderLeft: '1px solid #333', marginLeft: 4
+              }}>
+                {displayName}
+              </span>
+              <button style={{
+                ...styles.navCTA, background: '#d97706', color: '#0d0f10',
+                fontWeight: 'bold', border: 'none'
+              }} onClick={() => navigate('/dashboard')}>
+                Dashboard
+              </button>
+              <button style={{
+                ...styles.navCTA, background: '#1a1408', border: '1px solid #78716c',
+                color: '#a8a29e', marginLeft: 4
+              }} onClick={() => navigate('/employer-dashboard')}>
+                Employer Hub
+              </button>
+              <button style={{
+                ...styles.navLink, color: '#f87171'
+              }} onClick={onSignOut}>Log Out</button>
             </>
           )}
         </div>
 
         {/* Mobile Hamburger */}
-        <button
-          data-hamburger-menu
-          style={{ display: 'none', background: 'none', border: 'none', color: '#d97706', fontSize: 24, cursor: 'pointer', padding: '0 8px', fontFamily: 'inherit' }}
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Menu"
-        >
-          {"\u2630"}
-        </button>
+        <div style={{ display: 'none', alignItems: 'center', gap: 8 }} data-hamburger-wrap>
+          {user && (
+            <span style={{
+              color: '#d97706', fontSize: 12, fontWeight: 'bold',
+              maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              background: '#1a1408', border: '1px solid #d9770633', borderRadius: 12,
+              padding: '3px 10px'
+            }}>
+              {myProfile?.name || 'Signed In'}
+            </span>
+          )}
+          <button
+            data-hamburger-menu
+            style={{ background: 'none', border: 'none', color: '#d97706', fontSize: 24, cursor: 'pointer', padding: '0 8px', fontFamily: 'inherit' }}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Menu"
+          >
+            {mobileMenuOpen ? "\u2715" : "\u2630"}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
-        <div style={styles.navLinks} data-mobile-nav>
+        <div style={{
+          ...styles.navLinks,
+          borderTop: '1px solid #222',
+          paddingTop: 8,
+          paddingBottom: 12,
+        }} data-mobile-nav>
+          {user && (
+            <div style={{
+              padding: '12px 24px', margin: '0 0 4px',
+              background: '#1a1408', borderRadius: 8,
+              borderLeft: '3px solid #d97706'
+            }}>
+              <div style={{ fontSize: 11, color: '#7a7570', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
+                Signed in as
+              </div>
+              <div style={{ color: '#d97706', fontWeight: 'bold', fontSize: 14 }}>
+                {displayName}
+              </div>
+              {myProfile?.name && (
+                <div style={{ color: '#7a7570', fontSize: 11, marginTop: 1 }}>{user.email}</div>
+              )}
+            </div>
+          )}
           <button style={view === "jobs" ? styles.navLinkActive : styles.navLink} onClick={() => navTo("jobs")}>Browse Jobs</button>
           <button style={view === "techs" ? styles.navLinkActive : styles.navLink} onClick={() => navTo("techs")}>Find Techs</button>
           <button style={styles.navCTA} onClick={() => navTo("postJob")}>Post a Job</button>
@@ -59,10 +113,24 @@ export default function Navbar({ view, setView, user, navigate, onSignOut }) {
             </>
           ) : (
             <>
-              <span style={{ color: '#7a7570', fontSize: 13, padding: '16px 24px', display: 'block' }}>Signed in as: {user.email}</span>
-              <button style={{ ...styles.navCTA, background: '#1a1408', border: '1px solid #d97706', color: '#d97706' }} onClick={() => navPath('/dashboard')}>Dashboard</button>
-              <button style={{ ...styles.navCTA, background: '#1a1408', border: '1px solid #78716c', color: '#a8a29e' }} onClick={() => navPath('/employer-dashboard')}>Employer Hub</button>
-              <button style={styles.navLink} onClick={() => { onSignOut(); setMobileMenuOpen(false); }}>Log Out</button>
+              <button style={{
+                ...styles.navCTA, background: '#d97706', color: '#0d0f10',
+                fontWeight: 'bold', border: 'none', width: '100%', textAlign: 'center'
+              }} onClick={() => navPath('/dashboard')}>
+                Dashboard
+              </button>
+              <button style={{
+                ...styles.navCTA, background: '#1a1408', border: '1px solid #78716c',
+                color: '#a8a29e', width: '100%', textAlign: 'center'
+              }} onClick={() => navPath('/employer-dashboard')}>
+                Employer Hub
+              </button>
+              <button style={{
+                ...styles.navLink, color: '#f87171', width: '100%', textAlign: 'center',
+                marginTop: 4, borderTop: '1px solid #222', paddingTop: 12
+              }} onClick={() => { onSignOut(); setMobileMenuOpen(false); }}>
+                Log Out
+              </button>
             </>
           )}
         </div>

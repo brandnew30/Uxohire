@@ -66,13 +66,12 @@ function StatusBadge({ status, days }) {
     <span style={{ background: bg, color, fontSize: 11, padding: "3px 9px",
                    borderRadius: 12, fontWeight: "bold", whiteSpace: "nowrap",
                    border: `1px solid ${color}33` }}>
-      ● {label}
+      {"\u25CF"} {label}
     </span>
   );
 }
 
 // ─── Job match scoring ────────────────────────────────────────────────────────
-// Map cert labels used in job_posts to profile boolean/array fields
 function techCertSet(profile) {
   const certs = new Set();
   (profile.dod_certs || []).forEach(c => certs.add(c));
@@ -99,7 +98,6 @@ function scoreJob(job, profile) {
 
   const qualified = missedReq.length === 0;
 
-  // Score: required certs met + partial preferred credit
   const reqScore  = required.length  > 0 ? (metRequired.length  / required.length)  * 70 : 70;
   const prefScore = preferred.length > 0 ? (metPreferred.length / preferred.length) * 30 : 30;
   const matchPct  = Math.round(reqScore + prefScore);
@@ -139,8 +137,7 @@ async function upsertNotifications(profile) {
 
   if (toUpsert.length === 0) return [];
 
-  // Use upsert with conflict target — idempotent on cert_type + alert_days + expiry_date
-  const { data } = await supabase
+  await supabase
     .from("notifications")
     .upsert(toUpsert, {
       onConflict: "tech_profile_id,cert_type,alert_days,expiry_date",
@@ -148,7 +145,6 @@ async function upsertNotifications(profile) {
     })
     .select();
 
-  // Fetch active (scheduled, undismissed) notifications due today or earlier
   const today = new Date().toISOString().split("T")[0];
   const { data: active } = await supabase
     .from("notifications")
@@ -169,6 +165,7 @@ export default function TechDashboard({ user }) {
   const [activeSection, setActiveSection] = useState("jobs");
   const [notifications, setNotifications] = useState([]);
   const [dismissing, setDismissing] = useState(null);
+  const [animatedPct, setAnimatedPct] = useState(0);
 
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
@@ -211,10 +208,25 @@ export default function TechDashboard({ user }) {
     setDismissing(null);
   };
 
+  // Animate progress bar when career tab is active
+  useEffect(() => {
+    if (activeSection === "career" && profile) {
+      setAnimatedPct(0);
+      const hours = profile.total_field_hours || 0;
+      const currentLevel = getLevel(hours);
+      const nextLevel = LEVELS[currentLevel.index + 1] || null;
+      const targetPct = nextLevel
+        ? Math.min(100, Math.round(((hours - currentLevel.min) / (nextLevel.min - currentLevel.min)) * 100))
+        : 100;
+      const timer = setTimeout(() => setAnimatedPct(targetPct), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [activeSection, profile]);
+
   if (loading) return (
     <div style={s.root}>
       <div style={{ color: "#7a7570", padding: 40, textAlign: "center" }}>
-        Loading dashboard…
+        Loading dashboard...
       </div>
     </div>
   );
@@ -222,11 +234,11 @@ export default function TechDashboard({ user }) {
   if (!profile) return (
     <div style={s.root}>
       <div style={s.emptyCard}>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>🪖</div>
+        <div style={{ fontSize: 40, marginBottom: 16 }}>{"\uD83E\uDE96"}</div>
         <h2 style={s.emptyTitle}>No Tech Profile Found</h2>
         <p style={s.emptyMsg}>Create your technician profile to access your dashboard.</p>
         <button style={s.btnPrimary} onClick={() => navigate("/create-profile")}>
-          Create Profile →
+          Create Profile {"\u2192"}
         </button>
       </div>
     </div>
@@ -252,10 +264,33 @@ export default function TechDashboard({ user }) {
     physical:      "Annual Physical",
   };
 
+  // Build expiring cert alerts for Notifications tab (certs expiring within 60 days)
+  const certAlerts = [];
+  const addAlert = (label, expiryDate) => {
+    if (!expiryDate) return;
+    const days = daysUntil(expiryDate);
+    if (days !== null && days <= 60) {
+      certAlerts.push({ label, expiryDate, days });
+    }
+  };
+  addAlert("HAZWOPER 8-HR Refresher", profile.hazwoper_8_expiry);
+  addAlert("First Aid / CPR", profile.first_aid_cpr_expiry);
+  addAlert("State License", profile.state_license_expiry);
+  addAlert("Annual Physical", profile.physical_date
+    ? new Date(new Date(profile.physical_date).setFullYear(
+        new Date(profile.physical_date).getFullYear() + 1
+      )).toISOString().split("T")[0]
+    : null);
+  if (profile.dod_cert_expiry) addAlert("DOD Certification", profile.dod_cert_expiry);
+  certAlerts.sort((a, b) => a.days - b.days);
+
+  const notifCount = notifications.length + certAlerts.length;
+
   const navItems = [
-    { id: "jobs",   label: "Job Matches",  icon: "🎯" },
-    { id: "certs",  label: "Cert Tracker", icon: "📋" },
-    { id: "career", label: "Career",       icon: "📈" },
+    { id: "jobs",    label: "Job Matches",     icon: "\uD83C\uDFAF" },
+    { id: "certs",   label: "Cert Tracker",    icon: "\uD83D\uDCCB" },
+    { id: "career",  label: "Career",          icon: "\uD83D\uDCC8" },
+    { id: "notifs",  label: "Notifications",   icon: "\uD83D\uDD14", badge: notifCount > 0 ? notifCount : null },
   ];
 
   return (
@@ -268,17 +303,12 @@ export default function TechDashboard({ user }) {
             <div style={s.headerName}>{profile.name}</div>
           </div>
           <div style={s.headerRight}>
-            {notifications.length > 0 && (
-              <div style={s.notifBell}>
-                🔔 <span style={s.notifCount}>{notifications.length}</span>
-              </div>
-            )}
-            <button style={s.backBtn} onClick={() => navigate("/")}>← Home</button>
+            <button style={s.backBtn} onClick={() => navigate("/")}>{"\u2190"} Home</button>
           </div>
         </div>
       </div>
 
-      {/* ── Notification banners ── */}
+      {/* ── Notification banners (top-level urgent alerts) ── */}
       {notifications.length > 0 && (
         <div style={s.notifWrap}>
           {notifications.map(n => {
@@ -287,7 +317,7 @@ export default function TechDashboard({ user }) {
             return (
               <div key={n.id} style={{ ...s.notifBanner, ...(urgent ? s.notifBannerUrgent : {}) }}>
                 <span>
-                  {urgent ? "🚨" : "⚠️"} Your <strong>{CERT_LABELS[n.cert_type] || n.cert_type}</strong> expires
+                  {urgent ? "\uD83D\uDEA8" : "\u26A0\uFE0F"} Your <strong>{CERT_LABELS[n.cert_type] || n.cert_type}</strong> expires
                   {days !== null ? ` in ${days} days` : ""} ({n.expiry_date}).
                 </span>
                 <button
@@ -295,7 +325,7 @@ export default function TechDashboard({ user }) {
                   onClick={() => dismissNotification(n.id)}
                   disabled={dismissing === n.id}
                 >
-                  {dismissing === n.id ? "…" : "✕"}
+                  {dismissing === n.id ? "\u2026" : "\u2715"}
                 </button>
               </div>
             );
@@ -309,11 +339,21 @@ export default function TechDashboard({ user }) {
           <button
             key={item.id}
             className={"td-tab" + (activeSection === item.id ? " td-tab-active" : "")}
-            style={{ ...s.tab, ...(activeSection === item.id ? s.tabActive : {}) }}
+            style={{ ...s.tab, ...(activeSection === item.id ? s.tabActive : {}), position: 'relative' }}
             onClick={() => setActiveSection(item.id)}
           >
             <span style={s.tabIcon}>{item.icon}</span>
             <span className="td-tab-label" style={s.tabLabel}>{item.label}</span>
+            {item.badge && (
+              <span style={{
+                background: '#f87171', color: '#fff', fontSize: 10, fontWeight: 'bold',
+                borderRadius: '50%', minWidth: 18, height: 18, display: 'inline-flex',
+                alignItems: 'center', justifyContent: 'center', padding: '0 4px',
+                marginLeft: 4
+              }}>
+                {item.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -321,7 +361,7 @@ export default function TechDashboard({ user }) {
       <div style={s.body} className="td-body">
 
         {/* ═══════════════════════════════════════════════════
-            SECTION 1 — JOB MATCH DASHBOARD
+            TAB 1 — JOB MATCH DASHBOARD
         ═══════════════════════════════════════════════════ */}
         {activeSection === "jobs" && (
           <div>
@@ -332,7 +372,7 @@ export default function TechDashboard({ user }) {
 
             {scoredJobs.length === 0 && (
               <div style={s.emptyState}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>{"\uD83D\uDD0D"}</div>
                 <p>No current listings match your certifications.</p>
                 <p style={{ color: "#555", fontSize: 13 }}>
                   Add more certs to your profile or check back when new jobs post.
@@ -348,15 +388,14 @@ export default function TechDashboard({ user }) {
                       <div style={s.jobCompany}>{job.company}</div>
                       <div style={s.jobTitle}>{job.title}</div>
                       <div style={s.jobMeta}>
-                        <span>📍 {job.location}</span>
-                        {job.salary && <span>💰 {job.salary}</span>}
-                        <span>🗂 {job.type}</span>
+                        <span>{"\uD83D\uDCCD"} {job.location}</span>
+                        {job.salary && <span>{"\uD83D\uDCB0"} {job.salary}</span>}
+                        <span>{"\uD83D\uDDC2"} {job.type}</span>
                       </div>
                     </div>
                     <MatchBadge pct={job.matchPct} />
                   </div>
 
-                  {/* Required certs met */}
                   {job.required_certs?.length > 0 && (
                     <div style={s.matchSection}>
                       <div style={s.matchLabel}>Required</div>
@@ -366,14 +405,13 @@ export default function TechDashboard({ user }) {
                             ...s.certChip,
                             ...(job.metRequired.includes(c) ? s.certChipMet : s.certChipMissed)
                           }}>
-                            {job.metRequired.includes(c) ? "✓" : "✗"} {c}
+                            {job.metRequired.includes(c) ? "\u2713" : "\u2717"} {c}
                           </span>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Preferred certs */}
                   {job.preferred_certs?.length > 0 && (
                     <div style={s.matchSection}>
                       <div style={s.matchLabel}>Preferred</div>
@@ -383,7 +421,7 @@ export default function TechDashboard({ user }) {
                             ...s.certChip,
                             ...(job.metPreferred.includes(c) ? s.certChipPref : s.certChipNeutral)
                           }}>
-                            {job.metPreferred.includes(c) ? "✓" : "○"} {c}
+                            {job.metPreferred.includes(c) ? "\u2713" : "\u25CB"} {c}
                           </span>
                         ))}
                       </div>
@@ -391,7 +429,7 @@ export default function TechDashboard({ user }) {
                   )}
 
                   <button style={s.applyBtn} onClick={() => navigate("/")}>
-                    View & Apply →
+                    View & Apply {"\u2192"}
                   </button>
                 </div>
               ))}
@@ -400,7 +438,7 @@ export default function TechDashboard({ user }) {
         )}
 
         {/* ═══════════════════════════════════════════════════
-            SECTION 2 — CERTIFICATION TRACKER
+            TAB 2 — CERTIFICATION TRACKER
         ═══════════════════════════════════════════════════ */}
         {activeSection === "certs" && (
           <div>
@@ -417,6 +455,7 @@ export default function TechDashboard({ user }) {
                 held={profile.hazwoper_40}
                 issueDate={profile.hazwoper_40_date}
                 lifetime={true}
+                lifetimeText="Lifetime / No expiration"
               />
 
               {/* HAZWOPER 8-HR Refresher — expires 12 months from issue */}
@@ -428,20 +467,6 @@ export default function TechDashboard({ user }) {
                 renewalNote="Renews annually"
               />
 
-              {/* DOD UXO Certs — optional expiry */}
-              {(profile.dod_certs || []).map(cert => (
-                <CertCard
-                  key={cert}
-                  label={cert}
-                  held={true}
-                  expiryDate={cert === (profile.dod_certs || [])[0] ? profile.dod_cert_expiry : null}
-                  renewalNote="DOD renewal per cert"
-                />
-              ))}
-              {(profile.dod_certs || []).length === 0 && (
-                <CertCard label="DOD UXO Certification" held={false} />
-              )}
-
               {/* First Aid / CPR — expires 2 years */}
               <CertCard
                 label="First Aid / CPR"
@@ -450,6 +475,34 @@ export default function TechDashboard({ user }) {
                 expiryDate={profile.first_aid_cpr_expiry}
                 renewalNote="Renews every 2 years"
               />
+
+              {/* DOD UXO Certs — optional expiry */}
+              {(profile.dod_certs || []).map(cert => (
+                <CertCard
+                  key={cert}
+                  label={cert}
+                  held={true}
+                  expiryDate={cert === (profile.dod_certs || [])[0] ? profile.dod_cert_expiry : null}
+                  renewalNote={profile.dod_cert_expiry ? "DOD renewal per cert" : null}
+                  lifetime={!profile.dod_cert_expiry}
+                  lifetimeText={!profile.dod_cert_expiry ? "Active" : null}
+                />
+              ))}
+              {(profile.dod_certs || []).length === 0 && (
+                <CertCard label="DOD UXO Certification" held={false} />
+              )}
+
+              {/* State License */}
+              {profile.state_license ? (
+                <CertCard
+                  label={`State License \u2014 ${profile.state_license}`}
+                  held={true}
+                  expiryDate={profile.state_license_expiry}
+                  renewalNote="Varies by state"
+                />
+              ) : (
+                <CertCard label="State License" held={false} />
+              )}
 
               {/* Current Physical */}
               <CertCard
@@ -466,7 +519,7 @@ export default function TechDashboard({ user }) {
 
               {/* Security Clearance — no expiry tracked */}
               <CertCard
-                label={profile.clearance_level ? `Clearance — ${profile.clearance_level}` : "Security Clearance"}
+                label={profile.clearance_level ? `Clearance \u2014 ${profile.clearance_level}` : "Security Clearance"}
                 held={profile.clearance}
                 lifetime={profile.clearance}
                 renewalNote="Managed via SF-86"
@@ -479,7 +532,7 @@ export default function TechDashboard({ user }) {
                 lifetime={profile.military_eod}
               />
 
-              {/* Dive Cert — no expiry tracked here */}
+              {/* Dive Cert */}
               <CertCard label="Dive Certification" held={profile.dive_cert} lifetime={profile.dive_cert} />
 
               {/* Driver's License */}
@@ -488,24 +541,12 @@ export default function TechDashboard({ user }) {
               {/* CDL */}
               <CertCard label="CDL" held={profile.cdl} lifetime={profile.cdl} />
 
-              {/* State License */}
-              {profile.state_license ? (
-                <CertCard
-                  label={`State License — ${profile.state_license}`}
-                  held={true}
-                  expiryDate={profile.state_license_expiry}
-                  renewalNote="Varies by state"
-                />
-              ) : (
-                <CertCard label="State License" held={false} />
-              )}
-
             </div>
           </div>
         )}
 
         {/* ═══════════════════════════════════════════════════
-            SECTION 3 — CAREER PROGRESSION
+            TAB 3 — CAREER PROGRESSION
         ═══════════════════════════════════════════════════ */}
         {activeSection === "career" && (
           <div>
@@ -531,12 +572,12 @@ export default function TechDashboard({ user }) {
               )}
               {!nextLevel && (
                 <div style={s.levelNext}>
-                  <span style={{ color: "#4ade80", fontSize: 13 }}>🏆 Maximum level reached</span>
+                  <span style={{ color: "#4ade80", fontSize: 13 }}>{"\uD83C\uDFC6"} Maximum level reached</span>
                 </div>
               )}
             </div>
 
-            {/* Progress bar */}
+            {/* Animated progress bar */}
             {nextLevel && (
               <div style={s.progressWrap}>
                 <div style={s.progressMeta}>
@@ -545,10 +586,16 @@ export default function TechDashboard({ user }) {
                   <span style={{ color: "#7a7570", fontSize: 13 }}>{nextLevel.label} ({nextLevel.min.toLocaleString()} hrs)</span>
                 </div>
                 <div style={s.progressTrack}>
-                  <div style={{ ...s.progressFill, width: `${progressPct}%` }} />
+                  <div style={{
+                    ...s.progressFill,
+                    width: `${animatedPct}%`,
+                    transition: 'width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                  }} />
                 </div>
                 <div style={{ color: "#555", fontSize: 12, marginTop: 6 }}>
                   {hours.toLocaleString()} / {nextLevel.min.toLocaleString()} hours logged
+                  {" \u2014 "}
+                  <span style={{ color: "#d97706" }}>{(nextLevel.min - hours).toLocaleString()} hours remaining</span>
                 </div>
               </div>
             )}
@@ -563,7 +610,7 @@ export default function TechDashboard({ user }) {
                   <div key={lvl.label} style={{ ...s.levelRow, ...(isCurrent ? s.levelRowActive : {}) }}>
                     <div style={s.levelRowLeft}>
                       <span style={{ ...s.levelRowDot, background: isAchieved ? "#4ade80" : "#333" }}>
-                        {isAchieved ? "✓" : i + 1}
+                        {isAchieved ? "\u2713" : i + 1}
                       </span>
                       <span style={{ color: isCurrent ? "#d97706" : isAchieved ? "#e8e4dc" : "#555",
                                      fontWeight: isCurrent ? "bold" : "normal" }}>
@@ -573,7 +620,7 @@ export default function TechDashboard({ user }) {
                     </div>
                     <span style={{ color: "#7a7570", fontSize: 13 }}>
                       {lvl.max != null
-                        ? `${lvl.min.toLocaleString()} – ${lvl.max.toLocaleString()} hrs`
+                        ? `${lvl.min.toLocaleString()} \u2013 ${lvl.max.toLocaleString()} hrs`
                         : `${lvl.min.toLocaleString()}+ hrs`}
                     </span>
                   </div>
@@ -581,7 +628,7 @@ export default function TechDashboard({ user }) {
               })}
             </div>
 
-            {/* Cert summary for this level */}
+            {/* DOD Cert summary */}
             <div style={s.certSummaryCard}>
               <div style={s.certSummaryTitle}>Your Active DOD Certifications</div>
               {(profile.dod_certs || []).length > 0 ? (
@@ -600,13 +647,118 @@ export default function TechDashboard({ user }) {
           </div>
         )}
 
+        {/* ═══════════════════════════════════════════════════
+            TAB 4 — NOTIFICATIONS
+        ═══════════════════════════════════════════════════ */}
+        {activeSection === "notifs" && (
+          <div>
+            <div style={s.sectionHeader}>
+              <h2 style={s.sectionTitle}>Notifications</h2>
+              <span style={s.sectionSub}>Certifications expiring within 60 days</span>
+            </div>
+
+            {/* Server-side notifications (dismissable) */}
+            {notifications.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                {notifications.map(n => {
+                  const days = daysUntil(n.expiry_date);
+                  const urgent = days !== null && days <= 30;
+                  const color = urgent ? "#f87171" : "#fbbf24";
+                  const bg = urgent ? "#2a0a0a" : "#2a1e08";
+                  return (
+                    <div key={n.id} style={{
+                      background: bg, border: `1px solid ${color}`,
+                      borderRadius: 10, padding: '16px 20px', marginBottom: 10,
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      gap: 12
+                    }}>
+                      <div>
+                        <div style={{ color, fontWeight: 'bold', fontSize: 14, marginBottom: 4 }}>
+                          {urgent ? "\uD83D\uDEA8" : "\u26A0\uFE0F"} {CERT_LABELS[n.cert_type] || n.cert_type}
+                        </div>
+                        <div style={{ color: '#9a9490', fontSize: 13 }}>
+                          {days !== null && days < 0
+                            ? `Expired ${Math.abs(days)} days ago`
+                            : days !== null
+                              ? `Expires in ${days} days`
+                              : 'Expiring soon'
+                          }
+                          {" \u2014 "}{n.expiry_date}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => dismissNotification(n.id)}
+                        disabled={dismissing === n.id}
+                        style={{
+                          background: 'none', border: `1px solid ${color}33`,
+                          color, cursor: 'pointer', padding: '6px 12px',
+                          borderRadius: 6, fontSize: 12, fontFamily: 'inherit',
+                          flexShrink: 0
+                        }}
+                      >
+                        {dismissing === n.id ? "\u2026" : "Dismiss"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Client-side cert expiry alerts */}
+            {certAlerts.length > 0 && (
+              <div>
+                <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6a6660', marginBottom: 12 }}>
+                  Upcoming Expirations
+                </div>
+                {certAlerts.map((alert, i) => {
+                  const urgent = alert.days <= 30;
+                  const expired = alert.days < 0;
+                  const color = expired || urgent ? "#f87171" : "#fbbf24";
+                  const bg = expired || urgent ? "#2a0a0a" : "#2a1e08";
+                  return (
+                    <div key={i} style={{
+                      background: bg, border: `1px solid ${color}33`,
+                      borderRadius: 10, padding: '14px 18px', marginBottom: 8,
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      flexWrap: 'wrap', gap: 8
+                    }}>
+                      <div>
+                        <div style={{ color: '#e8e4dc', fontWeight: 'bold', fontSize: 14 }}>{alert.label}</div>
+                        <div style={{ color: '#7a7570', fontSize: 12, marginTop: 2 }}>
+                          Expires: {new Date(alert.expiryDate).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <span style={{
+                        background: `${color}22`, color, fontSize: 13, fontWeight: 'bold',
+                        padding: '4px 12px', borderRadius: 12, border: `1px solid ${color}33`
+                      }}>
+                        {expired ? `Expired ${Math.abs(alert.days)}d ago` : `${alert.days} days left`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {notifications.length === 0 && certAlerts.length === 0 && (
+              <div style={s.emptyState}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>{"\u2705"}</div>
+                <p style={{ color: '#e8e4dc', fontSize: 15 }}>All clear!</p>
+                <p style={{ color: "#555", fontSize: 13 }}>
+                  No certifications expiring within 60 days. You're in good standing.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>{/* /body */}
     </div>
   );
 }
 
 // ─── CertCard sub-component ──────────────────────────────────────────────────
-function CertCard({ label, held, issueDate, expiryDate, lifetime, renewalNote }) {
+function CertCard({ label, held, issueDate, expiryDate, lifetime, lifetimeText, renewalNote }) {
   let st;
   if (!held)         st = { status: "missing", days: null };
   else if (lifetime) st = { status: "lifetime", days: null };
@@ -629,7 +781,10 @@ function CertCard({ label, held, issueDate, expiryDate, lifetime, renewalNote })
               Expires: {new Date(expiryDate).toLocaleDateString()}
             </span>
           )}
-          {lifetime && !expiryDate && <span style={{ color: "#4ade80" }}>No expiration</span>}
+          {lifetime && lifetimeText && (
+            <span style={{ color: "#4ade80" }}>{lifetimeText}</span>
+          )}
+          {lifetime && !lifetimeText && !expiryDate && <span style={{ color: "#4ade80" }}>No expiration</span>}
           {renewalNote && <span style={{ color: "#555" }}>{renewalNote}</span>}
         </div>
       )}
@@ -680,10 +835,6 @@ const s = {
   backBtn:       { background: "none", border: "1px solid #333", color: "#9a9490",
                    cursor: "pointer", padding: "6px 14px", fontSize: 13,
                    borderRadius: 6, fontFamily: "inherit" },
-  notifBell:     { position: "relative", fontSize: 18 },
-  notifCount:    { position: "absolute", top: -4, right: -6, background: "#f87171",
-                   color: "#000", fontSize: 10, fontWeight: "bold",
-                   borderRadius: "50%", padding: "1px 4px" },
   notifWrap:     { maxWidth: 900, margin: "12px auto 0", padding: "0 20px" },
   notifBanner:   { background: "#2a1e08", border: "1px solid #fbbf24", borderRadius: 8,
                    padding: "12px 16px", fontSize: 13, color: "#fbbf24",
@@ -771,7 +922,7 @@ const s = {
                    marginBottom: 10, flexWrap: "wrap", gap: 8, rowGap: 6 },
   progressTrack: { background: "#1e2022", borderRadius: 8, height: 14, overflow: "hidden" },
   progressFill:  { height: "100%", background: "linear-gradient(90deg, #d97706, #f59e0b)",
-                   borderRadius: 8, transition: "width 0.6s ease" },
+                   borderRadius: 8 },
   levelsTable:   { background: "#111316", border: "1px solid #1e2022",
                    borderRadius: 10, overflow: "hidden", marginBottom: 16 },
   levelsTitle:   { fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em",

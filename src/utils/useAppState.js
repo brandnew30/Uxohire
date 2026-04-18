@@ -60,6 +60,7 @@ export default function useAppState(userProp) {
 
   const goToCreateProfile = () => {
     if (!user) navigate('/signup', { state: { returnTo: '/create-profile' } });
+    else if (myProfile) navigate('/dashboard', { replace: true });
     else setView('techProfile');
   };
 
@@ -89,7 +90,8 @@ export default function useAppState(userProp) {
 
   useEffect(() => {
     if (view === 'techProfile' && !user) navigate('/signup', { state: { returnTo: '/create-profile' }, replace: true });
-  }, [view, user]); // eslint-disable-line
+    if (view === 'techProfile' && user && myProfile) navigate('/dashboard', { replace: true });
+  }, [view, user, myProfile]); // eslint-disable-line
 
   useEffect(() => {
     if (view === 'postJob' && user) {

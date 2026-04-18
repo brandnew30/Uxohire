@@ -4,7 +4,7 @@ import JobCard from "../components/JobCard";
 
 export default function JobsView({
   filteredJobs, filterCert, setFilterCert, filterLocation, setFilterLocation,
-  dataLoading, setActiveJob, goToCreateProfile, setView,
+  dataLoading, setActiveJob, goToCreateProfile, setView, user, myProfile, navigate,
 }) {
   return (
     <div>
@@ -18,7 +18,13 @@ export default function JobsView({
           Connecting certified UXO technicians with the companies that need them most.
         </p>
         <div style={styles.heroActions} data-hero-actions>
-          <button style={styles.btnPrimary} data-btn-primary onClick={goToCreateProfile}>Create Tech Profile</button>
+          {user && myProfile ? (
+            <button style={styles.btnPrimary} data-btn-primary onClick={() => navigate('/dashboard')}>Go to Dashboard</button>
+          ) : user && !myProfile ? (
+            <button style={styles.btnPrimary} data-btn-primary onClick={goToCreateProfile}>Complete Your Profile</button>
+          ) : (
+            <button style={styles.btnPrimary} data-btn-primary onClick={goToCreateProfile}>Create Tech Profile</button>
+          )}
           <button style={styles.btnSecondary} data-btn-secondary onClick={() => setView("postJob")}>Post a Job</button>
         </div>
       </div>

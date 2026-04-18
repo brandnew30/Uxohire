@@ -14,8 +14,8 @@
     display: none !important;
   }
 
-  /* Show hamburger menu on mobile */
-  [data-hamburger-menu] {
+  /* Show hamburger wrapper (includes name badge + menu button) on mobile */
+  [data-hamburger-wrap] {
     display: flex !important;
   }
 

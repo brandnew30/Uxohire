@@ -19,7 +19,7 @@ export default function UXOHire({ user: userProp }) {
 
   return (
     <div style={styles.root}>
-      <Navbar view={s.view} setView={s.setView} user={s.user} navigate={s.navigate} onSignOut={s.handleSignOut} />
+      <Navbar view={s.view} setView={s.setView} user={s.user} myProfile={s.myProfile} navigate={s.navigate} onSignOut={s.handleSignOut} />
 
       <main style={styles.main} data-main-container>
         {s.authSuccessMsg && (
@@ -32,7 +32,8 @@ export default function UXOHire({ user: userProp }) {
           <JobsView filteredJobs={s.filteredJobs} filterCert={s.filterCert} setFilterCert={s.setFilterCert}
             filterLocation={s.filterLocation} setFilterLocation={s.setFilterLocation}
             dataLoading={s.dataLoading} setActiveJob={s.setActiveJob}
-            goToCreateProfile={s.goToCreateProfile} setView={s.setView} />
+            goToCreateProfile={s.goToCreateProfile} setView={s.setView}
+            user={s.user} myProfile={s.myProfile} navigate={s.navigate} />
         )}
 
         {s.view === "jobs" && s.activeJob && (
@@ -40,7 +41,8 @@ export default function UXOHire({ user: userProp }) {
         )}
 
         {s.view === "techs" && !s.activeTech && (
-          <TechsView techs={s.techs} setActiveTech={s.setActiveTech} goToCreateProfile={s.goToCreateProfile} />
+          <TechsView techs={s.techs} setActiveTech={s.setActiveTech} goToCreateProfile={s.goToCreateProfile}
+            user={s.user} myProfile={s.myProfile} navigate={s.navigate} />
         )}
 
         {s.view === "techs" && s.activeTech && (
