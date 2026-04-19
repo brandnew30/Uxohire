@@ -32,6 +32,7 @@ export const normalizeTech = (t) => ({
   driversLicense: t.drivers_license,
   cdl: t.cdl,
   available: t.open_to_work,
+  visibleToTechs: t.visible_to_techs ?? true,
   summary: t.summary || '',
   jobRolePreference: t.job_role_preference || 'any',
   specificRoles: t.specific_roles || [],

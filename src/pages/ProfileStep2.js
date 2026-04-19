@@ -126,6 +126,7 @@ export default function ProfileStep2({
       <YesNoBlock label="First Aid / CPR" value={profile.firstAidCpr}
         onYes={() => setProfile(p => ({ ...p, firstAidCpr: true }))}
         onNo={() => setProfile(p => ({ ...p, firstAidCpr: false, firstAidCprDate: "" }))}>
+        <div style={{ fontSize: 12, color: '#7a7570', marginTop: -2 }}>If your First Aid/CPR certification is expired, select No</div>
         {profile.firstAidCpr && (
           <div style={styles.subField}>
             <label style={styles.label}>Issue Date</label>

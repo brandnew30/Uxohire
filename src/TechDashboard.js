@@ -265,7 +265,7 @@ export default function TechDashboard({ user }) {
 
   const CERT_LABELS = {
     hazwoper_8:    "HAZWOPER 8-HR Refresher",
-    dod_cert:      "DOD UXO Certification",
+    dod_cert:      "UXO Certification",
     first_aid_cpr: "First Aid / CPR",
     state_license: "State License",
     physical:      "Annual Physical",
@@ -490,20 +490,20 @@ export default function TechDashboard({ user }) {
                 renewalNote="Renews every 2 years"
               />
 
-              {/* DOD UXO Certs — optional expiry */}
+              {/* UXO Role Certifications — optional expiry */}
               {(profile.dod_certs || []).map(cert => (
                 <CertCard
                   key={cert}
                   label={cert}
                   held={true}
                   expiryDate={cert === (profile.dod_certs || [])[0] ? profile.dod_cert_expiry : null}
-                  renewalNote={profile.dod_cert_expiry ? "DOD renewal per cert" : null}
+                  renewalNote={profile.dod_cert_expiry ? "Renewal per cert" : null}
                   lifetime={!profile.dod_cert_expiry}
                   lifetimeText={!profile.dod_cert_expiry ? "Active" : null}
                 />
               ))}
               {(profile.dod_certs || []).length === 0 && (
-                <CertCard label="DOD UXO Certification" held={false} />
+                <CertCard label="UXO Certification" held={false} />
               )}
 
               {/* State License */}
@@ -642,9 +642,9 @@ export default function TechDashboard({ user }) {
               })}
             </div>
 
-            {/* DOD Cert summary */}
+            {/* UXO Cert summary */}
             <div style={s.certSummaryCard}>
-              <div style={s.certSummaryTitle}>Your Active DOD Certifications</div>
+              <div style={s.certSummaryTitle}>Your Active UXO Certifications</div>
               {(profile.dod_certs || []).length > 0 ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                   {(profile.dod_certs || []).map(c => (
@@ -653,7 +653,7 @@ export default function TechDashboard({ user }) {
                 </div>
               ) : (
                 <p style={{ color: "#555", fontSize: 13, marginTop: 8 }}>
-                  No DOD certifications on file. Add them via your profile.
+                  No UXO certifications on file. Add them via your profile.
                 </p>
               )}
             </div>

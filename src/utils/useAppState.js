@@ -57,6 +57,7 @@ export default function useAppState(userProp) {
     firstAidCpr: false, firstAidCprDate: "",
     stateLicense: "", stateLicenseExpiry: "",
     jobRolePreference: "any", specificRoles: [],
+    visibleToTechs: true,
   });
   const [jobPost, setJobPost] = useState({
     company: "", title: "", location: "", type: "Contract", salary: "", description: "",
@@ -132,6 +133,7 @@ export default function useAppState(userProp) {
               firstAidCpr: data.first_aid_cpr || false, firstAidCprDate: data.first_aid_cpr_date || '',
               stateLicense: data.state_license || '', stateLicenseExpiry: data.state_license_expiry || '',
               jobRolePreference: data.job_role_preference || 'any', specificRoles: data.specific_roles || [],
+              visibleToTechs: data.visible_to_techs ?? true,
             });
             setOpenToWork(data.open_to_work ?? true);
             setUploadPaths({ resume: data.resume_path || null, certs: data.cert_paths || [], hazwoper8: data.hazwoper8_cert_path || null, physical: data.physical_cert_path || null });
@@ -164,6 +166,7 @@ export default function useAppState(userProp) {
       state_license_expiry: profile.stateLicenseExpiry || null,
       job_role_preference: profile.jobRolePreference,
       specific_roles: profile.jobRolePreference === 'specific' ? profile.specificRoles : [],
+      visible_to_techs: profile.visibleToTechs,
       open_to_work: openToWork, user_id: user.id,
       resume_path: uploadPaths.resume || null, cert_paths: uploadPaths.certs || [],
       hazwoper8_cert_path: uploadPaths.hazwoper8 || null, physical_cert_path: uploadPaths.physical || null,

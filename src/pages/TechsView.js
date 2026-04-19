@@ -2,6 +2,10 @@ import styles from "../styles/theme";
 import TechCard from "../components/TechCard";
 
 export default function TechsView({ techs, setActiveTech, goToCreateProfile, user, myProfile, navigate }) {
+  // If the viewer is a tech (has a profile), hide techs who opted out of tech visibility
+  const isTech = !!myProfile;
+  const visibleTechs = isTech ? techs.filter(t => t.visibleToTechs !== false) : techs;
+
   return (
     <div>
       <div style={styles.pageHeader}>
@@ -20,7 +24,7 @@ export default function TechsView({ techs, setActiveTech, goToCreateProfile, use
         </p>
       </div>
       <div style={styles.cardGrid} data-card-grid>
-        {techs.map(tech => (
+        {visibleTechs.map(tech => (
           <TechCard key={tech.id} tech={tech} onClick={() => setActiveTech(tech)} />
         ))}
       </div>
