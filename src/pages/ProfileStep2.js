@@ -123,6 +123,17 @@ export default function ProfileStep2({
         )}
       </YesNoBlock>
 
+      <YesNoBlock label="First Aid / CPR" value={profile.firstAidCpr}
+        onYes={() => setProfile(p => ({ ...p, firstAidCpr: true }))}
+        onNo={() => setProfile(p => ({ ...p, firstAidCpr: false, firstAidCprDate: "" }))}>
+        {profile.firstAidCpr && (
+          <div style={styles.subField}>
+            <label style={styles.label}>Issue Date</label>
+            <input type="date" style={styles.input} value={profile.firstAidCprDate} onChange={e => setProfile(p => ({ ...p, firstAidCprDate: e.target.value }))} />
+          </div>
+        )}
+      </YesNoBlock>
+
       {[
         ["Military / EOD Background", "militaryEod"],
         ["Security Clearance", "clearance"],
@@ -141,6 +152,20 @@ export default function ProfileStep2({
           )}
         </YesNoBlock>
       ))}
+
+      <div style={styles.qualBlock}>
+        <label style={styles.qualBlockLabel}>State License</label>
+        <div style={styles.subField}>
+          <label style={styles.label}>License Name (leave blank if none)</label>
+          <input style={styles.input} placeholder="e.g. California UXO License" value={profile.stateLicense} onChange={e => setProfile(p => ({ ...p, stateLicense: e.target.value }))} />
+          {profile.stateLicense && (
+            <>
+              <label style={styles.label}>Expiry Date</label>
+              <input type="date" style={styles.input} value={profile.stateLicenseExpiry} onChange={e => setProfile(p => ({ ...p, stateLicenseExpiry: e.target.value }))} />
+            </>
+          )}
+        </div>
+      </div>
 
       <label style={styles.label}>Upload Certification Documents</label>
       <label htmlFor="certUpload" style={styles.uploadBox} data-upload-box>

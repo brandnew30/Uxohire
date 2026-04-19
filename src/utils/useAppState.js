@@ -54,6 +54,8 @@ export default function useAppState(userProp) {
     dodCerts: [], hazwoper40: false, hazwoper40Date: "", hazwoper8: false, hazwoper8Date: "",
     physicalCurrent: false, physicalDate: "", militaryEod: false, clearance: false,
     clearanceLevel: "", diveCert: false, driversLicense: false, cdl: false,
+    firstAidCpr: false, firstAidCprDate: "",
+    stateLicense: "", stateLicenseExpiry: "",
     jobRolePreference: "any", specificRoles: [],
   });
   const [jobPost, setJobPost] = useState({
@@ -127,6 +129,8 @@ export default function useAppState(userProp) {
               physicalDate: data.physical_date || '', militaryEod: data.military_eod || false,
               clearance: data.clearance || false, clearanceLevel: data.clearance_level || '',
               diveCert: data.dive_cert || false, driversLicense: data.drivers_license || false, cdl: data.cdl || false,
+              firstAidCpr: data.first_aid_cpr || false, firstAidCprDate: data.first_aid_cpr_date || '',
+              stateLicense: data.state_license || '', stateLicenseExpiry: data.state_license_expiry || '',
               jobRolePreference: data.job_role_preference || 'any', specificRoles: data.specific_roles || [],
             });
             setOpenToWork(data.open_to_work ?? true);
@@ -154,7 +158,11 @@ export default function useAppState(userProp) {
       physical_date: profile.physicalDate || null, military_eod: profile.militaryEod,
       clearance: profile.clearance, clearance_level: profile.clearanceLevel,
       dive_cert: profile.diveCert, drivers_license: profile.driversLicense,
-      cdl: profile.cdl, job_role_preference: profile.jobRolePreference,
+      cdl: profile.cdl, first_aid_cpr: profile.firstAidCpr,
+      first_aid_cpr_date: profile.firstAidCprDate || null,
+      state_license: profile.stateLicense || null,
+      state_license_expiry: profile.stateLicenseExpiry || null,
+      job_role_preference: profile.jobRolePreference,
       specific_roles: profile.jobRolePreference === 'specific' ? profile.specificRoles : [],
       open_to_work: openToWork, user_id: user.id,
       resume_path: uploadPaths.resume || null, cert_paths: uploadPaths.certs || [],

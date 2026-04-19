@@ -17,13 +17,11 @@ export const UXO_ROLE_OPTIONS = [
   "Sweeper",
   "UXO Technician I",
   "UXO Technician II",
-  "Senior UXO Technician / UXO Tech III",
+  "UXO Technician III",
   "UXO Quality Control",
-  "UXO Team Leader",
   "UXO Safety Officer / UXOSO",
-  "UXO Project Manager",
-  "Unexploded Ordnance Escort",
   "SUXOS - Senior UXO Supervisor",
+  "UXO Project Manager",
 ];
 
 export const ALL_CERT_OPTIONS = [
