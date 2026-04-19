@@ -54,7 +54,7 @@ export default function useAppState(userProp) {
     dodCerts: [], hazwoper40: false, hazwoper40Date: "", hazwoper8: false, hazwoper8Date: "",
     physicalCurrent: false, physicalDate: "", militaryEod: false, clearance: false,
     clearanceLevel: "", diveCert: false, driversLicense: false, cdl: false,
-    jobRolePreference: "any", specificRoles: "",
+    jobRolePreference: "any", specificRoles: [],
   });
   const [jobPost, setJobPost] = useState({
     company: "", title: "", location: "", type: "Contract", salary: "", description: "",
@@ -127,7 +127,7 @@ export default function useAppState(userProp) {
               physicalDate: data.physical_date || '', militaryEod: data.military_eod || false,
               clearance: data.clearance || false, clearanceLevel: data.clearance_level || '',
               diveCert: data.dive_cert || false, driversLicense: data.drivers_license || false, cdl: data.cdl || false,
-              jobRolePreference: data.job_role_preference || 'any', specificRoles: data.specific_roles || '',
+              jobRolePreference: data.job_role_preference || 'any', specificRoles: data.specific_roles || [],
             });
             setOpenToWork(data.open_to_work ?? true);
             setUploadPaths({ resume: data.resume_path || null, certs: data.cert_paths || [], hazwoper8: data.hazwoper8_cert_path || null, physical: data.physical_cert_path || null });
@@ -155,7 +155,7 @@ export default function useAppState(userProp) {
       clearance: profile.clearance, clearance_level: profile.clearanceLevel,
       dive_cert: profile.diveCert, drivers_license: profile.driversLicense,
       cdl: profile.cdl, job_role_preference: profile.jobRolePreference,
-      specific_roles: profile.jobRolePreference === 'specific' ? profile.specificRoles : '',
+      specific_roles: profile.jobRolePreference === 'specific' ? profile.specificRoles : [],
       open_to_work: openToWork, user_id: user.id,
       resume_path: uploadPaths.resume || null, cert_paths: uploadPaths.certs || [],
       hazwoper8_cert_path: uploadPaths.hazwoper8 || null, physical_cert_path: uploadPaths.physical || null,

@@ -255,11 +255,11 @@ export default function TechDashboard({ user }) {
     .map(job => ({ ...job, ...scoreJob(job, profile) }))
     .filter(j => j.qualified)
     .filter(j => {
-      if (profile.job_role_preference !== 'specific' || !profile.specific_roles) return true;
-      const wanted = profile.specific_roles.toLowerCase().split(',').map(r => r.trim()).filter(Boolean);
+      if (profile.job_role_preference !== 'specific') return true;
+      const wanted = profile.specific_roles || [];
       if (wanted.length === 0) return true;
       const title = (j.title || '').toLowerCase();
-      return wanted.some(role => title.includes(role));
+      return wanted.some(role => title.toLowerCase().includes(role.toLowerCase()));
     })
     .sort((a, b) => b.matchPct - a.matchPct);
 
@@ -377,10 +377,10 @@ export default function TechDashboard({ user }) {
               <h2 style={s.sectionTitle}>Jobs You Qualify For</h2>
               <span style={s.sectionSub}>{scoredJobs.length} matched listings</span>
             </div>
-            {profile.job_role_preference === 'specific' && profile.specific_roles && (
+            {profile.job_role_preference === 'specific' && (profile.specific_roles || []).length > 0 && (
               <div style={{ background: '#1a1408', border: '1px solid #d9770633', borderRadius: 8,
                 padding: '10px 14px', fontSize: 13, color: '#d97706', marginBottom: 16 }}>
-                {"\uD83C\uDFAF"} Filtering for: {profile.specific_roles}
+                {"\uD83C\uDFAF"} Filtering for: {profile.specific_roles.join(', ')}
               </div>
             )}
 

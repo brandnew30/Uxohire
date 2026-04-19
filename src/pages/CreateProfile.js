@@ -1,5 +1,5 @@
 import styles from "../styles/theme";
-import { TRAVEL_OPTIONS } from "../utils/constants";
+import { TRAVEL_OPTIONS, UXO_ROLE_OPTIONS } from "../utils/constants";
 import ProfileStep2 from "./ProfileStep2";
 
 export default function CreateProfile({
@@ -79,7 +79,7 @@ export default function CreateProfile({
               <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14, color: '#e8e4dc' }}>
                 <input type="radio" name="jobRolePref" value="any"
                   checked={profile.jobRolePreference === 'any'}
-                  onChange={() => setProfile(p => ({ ...p, jobRolePreference: 'any', specificRoles: '' }))}
+                  onChange={() => setProfile(p => ({ ...p, jobRolePreference: 'any', specificRoles: [] }))}
                   style={{ accentColor: '#d97706' }} />
                 Open to any job I qualify for
               </label>
@@ -91,9 +91,24 @@ export default function CreateProfile({
                 Specific roles only
               </label>
               {profile.jobRolePreference === 'specific' && (
-                <input style={styles.input} placeholder="e.g. UXO Tech III, QC Specialist, Site Lead"
-                  value={profile.specificRoles}
-                  onChange={e => setProfile(p => ({ ...p, specificRoles: e.target.value }))} />
+                <div style={styles.certGrid}>
+                  {UXO_ROLE_OPTIONS.map(role => {
+                    const selected = (profile.specificRoles || []).includes(role);
+                    return (
+                      <div key={role} style={{
+                        ...styles.certToggle,
+                        ...(selected ? { background: '#1a1408', border: '1px solid #d97706', color: '#d97706' } : {}),
+                      }} onClick={() => setProfile(p => ({
+                        ...p,
+                        specificRoles: selected
+                          ? (p.specificRoles || []).filter(r => r !== role)
+                          : [...(p.specificRoles || []), role],
+                      }))}>
+                        {selected ? "\u2713 " : ""}{role}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
 

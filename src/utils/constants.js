@@ -13,6 +13,19 @@ export const CERT_COLORS = {
   "UXO Safety Officer": "#6b1a3a",
 };
 
+export const UXO_ROLE_OPTIONS = [
+  "Sweeper",
+  "UXO Technician I",
+  "UXO Technician II",
+  "Senior UXO Technician / UXO Tech III",
+  "UXO Quality Control",
+  "UXO Team Leader",
+  "UXO Safety Officer / UXOSO",
+  "UXO Project Manager",
+  "Unexploded Ordnance Escort",
+  "SUXOS - Senior UXO Supervisor",
+];
+
 export const ALL_CERT_OPTIONS = [
   "DOD UXO Tech I", "DOD UXO Tech II", "DOD UXO Tech III",
   "QC Specialist", "UXO Safety Officer", "HAZWOPER 40-HR",

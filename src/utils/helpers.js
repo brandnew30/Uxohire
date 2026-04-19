@@ -34,7 +34,7 @@ export const normalizeTech = (t) => ({
   available: t.open_to_work,
   summary: t.summary || '',
   jobRolePreference: t.job_role_preference || 'any',
-  specificRoles: t.specific_roles || '',
+  specificRoles: t.specific_roles || [],
   resumePath: t.resume_path || null,
   certPaths: t.cert_paths || [],
   hazwoper8CertPath: t.hazwoper8_cert_path || null,

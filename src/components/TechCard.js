@@ -22,9 +22,14 @@ export default function TechCard({ tech, onClick }) {
         {tech.diveCert && <span style={{ ...styles.certTag, background: "#0d5f7a" }} data-cert-tag>Dive Certified</span>}
         {tech.clearance && <span style={{ ...styles.certTag, background: "#8B0000" }} data-cert-tag>Clearance: {tech.clearanceLevel}</span>}
       </div>
-      {tech.jobRolePreference === 'specific' && tech.specificRoles && (
-        <div style={{ fontSize: 12, color: '#d97706', marginTop: 8, marginBottom: 4 }}>
-          {"\uD83C\uDFAF"} Seeking: {tech.specificRoles}
+      {tech.jobRolePreference === 'specific' && (tech.specificRoles || []).length > 0 && (
+        <div style={{ marginTop: 8, marginBottom: 4 }}>
+          <div style={{ fontSize: 11, color: '#6a6660', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{"\uD83C\uDFAF"} Seeking Roles</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {tech.specificRoles.map(role => (
+              <span key={role} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: '#1a1408', border: '1px solid #d9770633', color: '#d97706' }}>{role}</span>
+            ))}
+          </div>
         </div>
       )}
       {tech.jobRolePreference === 'any' && (
