@@ -39,6 +39,8 @@ export default function useAppState(userProp) {
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
+  const [accountType, setAccountType] = useState(null); // 'technician' or 'employer'
+  const [isPaidEmployer, setIsPaidEmployer] = useState(false);
 
   const resetSuccess = location.state?.resetSuccess || false;
 
@@ -194,9 +196,6 @@ export default function useAppState(userProp) {
     if (fnError || !checkoutData?.url) { setSubmitError('Payment setup failed. Please contact support.'); setPaymentLoading(false); return; }
     window.location.href = checkoutData.url;
   };
-
-  const [accountType, setAccountType] = useState(null); // 'technician' or 'employer'
-  const [isPaidEmployer, setIsPaidEmployer] = useState(false);
 
   // Fetch account type on login
   useEffect(() => {
