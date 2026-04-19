@@ -1,13 +1,18 @@
 import styles from "../styles/theme";
 import { CERT_COLORS } from "../utils/constants";
 
-export default function TechCard({ tech, onClick }) {
+export default function TechCard({ tech, onClick, isFreeEmployer }) {
+  // Free employers see only name, roles/certs, and state/region
+  const displayLocation = isFreeEmployer && tech.location
+    ? tech.location.split(',').pop()?.trim() || tech.location
+    : tech.location;
+
   return (
     <div style={styles.jobCard} data-tech-card onClick={onClick}>
       <div style={styles.cardTop}>
         <div>
           <div style={styles.cardTitle} data-card-title>{tech.name}</div>
-          <div style={styles.cardCompany} data-card-company>{tech.location}</div>
+          <div style={styles.cardCompany} data-card-company>{displayLocation}</div>
         </div>
         <div style={{ ...styles.availBadge, background: "#1a4a2e", color: "#4ade80" }}>{"\u25CF"} Open to Work</div>
       </div>
@@ -15,7 +20,7 @@ export default function TechCard({ tech, onClick }) {
         <span>{"\u23F1"} {tech.uxoHours} UXO hrs</span>
         <span>{"\u2708\uFE0F"} {tech.travel}</span>
       </div>
-      <p style={styles.techSummary}>{tech.summary}</p>
+      {!isFreeEmployer && <p style={styles.techSummary}>{tech.summary}</p>}
       <div style={styles.certTags} data-cert-tags>
         {tech.dodCerts.map(c => <span key={c} style={{ ...styles.certTag, background: CERT_COLORS[c] || "#333" }} data-cert-tag>{c}</span>)}
         {tech.hazwoper40 && <span style={{ ...styles.certTag, background: "#1a4a2e" }} data-cert-tag>HAZWOPER 40-HR</span>}
@@ -38,7 +43,7 @@ export default function TechCard({ tech, onClick }) {
         </div>
       )}
       <div style={styles.cardFooter}>
-        <span style={styles.cardLink}>View Profile {"\u2192"}</span>
+        <span style={styles.cardLink}>{isFreeEmployer ? 'View Limited Profile' : 'View Profile'} {"\u2192"}</span>
       </div>
     </div>
   );

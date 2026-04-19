@@ -1,13 +1,16 @@
 import { useState } from "react";
 import styles from "../styles/theme";
 
-export default function Navbar({ view, setView, user, myProfile, navigate, onSignOut }) {
+export default function Navbar({ view, setView, user, myProfile, navigate, onSignOut, accountType }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navTo = (v) => { setView(v); setMobileMenuOpen(false); };
   const navPath = (path) => { navigate(path); setMobileMenuOpen(false); };
 
   const displayName = myProfile?.name || user?.email || '';
+  const isEmployer = accountType === 'employer';
+  const dashboardPath = isEmployer ? '/employer-dashboard' : '/dashboard';
+  const dashboardLabel = isEmployer ? 'Employer Hub' : 'Dashboard';
 
   return (
     <nav style={styles.nav}>
@@ -21,7 +24,9 @@ export default function Navbar({ view, setView, user, myProfile, navigate, onSig
         <div style={styles.navLinks} data-nav-links>
           <button style={view === "jobs" ? styles.navLinkActive : styles.navLink} onClick={() => setView("jobs")}>Browse Jobs</button>
           <button style={view === "techs" ? styles.navLinkActive : styles.navLink} onClick={() => setView("techs")}>Find Techs</button>
-          <button style={styles.navCTA} onClick={() => setView("postJob")}>Post a Job {"\u2192"}</button>
+          {isEmployer && (
+            <button style={styles.navCTA} onClick={() => setView("postJob")}>Post a Job {"\u2192"}</button>
+          )}
           {!user ? (
             <>
               <button style={styles.navLink} onClick={() => navigate('/login')}>Log In</button>
@@ -39,14 +44,8 @@ export default function Navbar({ view, setView, user, myProfile, navigate, onSig
               <button style={{
                 ...styles.navCTA, background: '#d97706', color: '#0d0f10',
                 fontWeight: 'bold', border: 'none'
-              }} onClick={() => navigate('/dashboard')}>
-                Dashboard
-              </button>
-              <button style={{
-                ...styles.navCTA, background: '#1a1408', border: '1px solid #78716c',
-                color: '#a8a29e', marginLeft: 4
-              }} onClick={() => navigate('/employer-dashboard')}>
-                Employer Hub
+              }} onClick={() => navigate(dashboardPath)}>
+                {dashboardLabel}
               </button>
               <button style={{
                 ...styles.navLink, color: '#f87171'
@@ -93,7 +92,7 @@ export default function Navbar({ view, setView, user, myProfile, navigate, onSig
               borderLeft: '3px solid #d97706'
             }}>
               <div style={{ fontSize: 11, color: '#7a7570', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
-                Signed in as
+                Signed in as {isEmployer ? '(Employer)' : '(Technician)'}
               </div>
               <div style={{ color: '#d97706', fontWeight: 'bold', fontSize: 14 }}>
                 {displayName}
@@ -105,7 +104,9 @@ export default function Navbar({ view, setView, user, myProfile, navigate, onSig
           )}
           <button style={view === "jobs" ? styles.navLinkActive : styles.navLink} onClick={() => navTo("jobs")}>Browse Jobs</button>
           <button style={view === "techs" ? styles.navLinkActive : styles.navLink} onClick={() => navTo("techs")}>Find Techs</button>
-          <button style={styles.navCTA} onClick={() => navTo("postJob")}>Post a Job</button>
+          {isEmployer && (
+            <button style={styles.navCTA} onClick={() => navTo("postJob")}>Post a Job</button>
+          )}
           {!user ? (
             <>
               <button style={styles.navLink} onClick={() => navPath('/login')}>Log In</button>
@@ -116,14 +117,8 @@ export default function Navbar({ view, setView, user, myProfile, navigate, onSig
               <button style={{
                 ...styles.navCTA, background: '#d97706', color: '#0d0f10',
                 fontWeight: 'bold', border: 'none', width: '100%', textAlign: 'center'
-              }} onClick={() => navPath('/dashboard')}>
-                Dashboard
-              </button>
-              <button style={{
-                ...styles.navCTA, background: '#1a1408', border: '1px solid #78716c',
-                color: '#a8a29e', width: '100%', textAlign: 'center'
-              }} onClick={() => navPath('/employer-dashboard')}>
-                Employer Hub
+              }} onClick={() => navPath(dashboardPath)}>
+                {dashboardLabel}
               </button>
               <button style={{
                 ...styles.navLink, color: '#f87171', width: '100%', textAlign: 'center',

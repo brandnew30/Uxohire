@@ -97,7 +97,8 @@ export default function useAppState(userProp) {
 
   useEffect(() => {
     if (view === 'techProfile' && !user) navigate('/signup', { state: { returnTo: '/create-profile' }, replace: true });
-  }, [view, user]); // eslint-disable-line
+    if (view === 'techProfile' && user && accountType === 'employer') navigate('/employer-dashboard', { replace: true });
+  }, [view, user, accountType]); // eslint-disable-line
 
   useEffect(() => {
     if (view === 'postJob' && user) {
@@ -194,21 +195,64 @@ export default function useAppState(userProp) {
     window.location.href = checkoutData.url;
   };
 
-  const handleSignUp = async () => {
+  const [accountType, setAccountType] = useState(null); // 'technician' or 'employer'
+  const [isPaidEmployer, setIsPaidEmployer] = useState(false);
+
+  // Fetch account type on login
+  useEffect(() => {
+    if (!user) { setAccountType(null); setIsPaidEmployer(false); return; }
+    supabase.from('user_accounts').select('account_type, is_paid_employer').eq('user_id', user.id).single()
+      .then(({ data }) => {
+        if (data) {
+          setAccountType(data.account_type);
+          setIsPaidEmployer(data.is_paid_employer || false);
+        } else {
+          // Legacy user without account record — check if they have a tech profile
+          supabase.from('tech_profiles').select('id').eq('user_id', user.id).single()
+            .then(({ data: tp }) => setAccountType(tp ? 'technician' : null));
+        }
+      });
+  }, [user]); // eslint-disable-line
+
+  const handleSignUp = async (selectedAccountType) => {
     setAuthLoading(true); setAuthError('');
-    const { data, error } = await supabase.auth.signUp({ email: authForm.email, password: authForm.password });
+    const acctType = selectedAccountType || 'technician';
+    const { data, error } = await supabase.auth.signUp({
+      email: authForm.email, password: authForm.password,
+      options: { data: { account_type: acctType } },
+    });
     setAuthLoading(false);
-    if (error) { setAuthError(error.message); }
-    else if (data.session) { setAuthForm({ email: '', password: '' }); navigate(location.state?.returnTo || '/create-profile', { replace: true }); }
-    else { setAuthSuccessMsg('Account created! Check your email to confirm, then log in.'); navigate('/login', { replace: true, state: { returnTo: location.state?.returnTo || '/create-profile' } }); }
+    if (error) { setAuthError(error.message); return; }
+    // Insert user_accounts row
+    if (data.user) {
+      await supabase.from('user_accounts').upsert({
+        user_id: data.user.id, account_type: acctType,
+      }, { onConflict: 'user_id' });
+      setAccountType(acctType);
+    }
+    const defaultRoute = acctType === 'employer' ? '/employer-onboarding' : '/create-profile';
+    if (data.session) {
+      setAuthForm({ email: '', password: '' });
+      navigate(location.state?.returnTo || defaultRoute, { replace: true });
+    } else {
+      setAuthSuccessMsg('Account created! Check your email to confirm, then log in.');
+      navigate('/login', { replace: true, state: { returnTo: location.state?.returnTo || defaultRoute } });
+    }
   };
 
   const handleLogin = async () => {
     setAuthLoading(true); setAuthError('');
-    const { error } = await supabase.auth.signInWithPassword({ email: authForm.email, password: authForm.password });
+    const { data: loginData, error } = await supabase.auth.signInWithPassword({ email: authForm.email, password: authForm.password });
     setAuthLoading(false);
-    if (error) setAuthError(error.message);
-    else { setAuthForm({ email: '', password: '' }); navigate(location.state?.returnTo || '/dashboard', { replace: true }); }
+    if (error) { setAuthError(error.message); return; }
+    setAuthForm({ email: '', password: '' });
+    if (location.state?.returnTo) { navigate(location.state.returnTo, { replace: true }); return; }
+    // Route based on account type
+    if (loginData.user) {
+      const { data: acct } = await supabase.from('user_accounts').select('account_type').eq('user_id', loginData.user.id).single();
+      if (acct?.account_type === 'employer') { navigate('/employer-dashboard', { replace: true }); return; }
+    }
+    navigate('/dashboard', { replace: true });
   };
 
   const handleSignOut = async () => { await supabase.auth.signOut(); setUser(null); setMyProfile(null); setView('jobs'); };
@@ -231,7 +275,7 @@ export default function useAppState(userProp) {
     postStep, setPostStep, filterCert, setFilterCert,
     filterLocation, setFilterLocation, notifications,
     errors, setErrors, filteredJobs, techs, dataLoading,
-    user, authForm, setAuthForm, authError, authLoading, authSuccessMsg, resetSuccess,
+    user, accountType, isPaidEmployer, authForm, setAuthForm, authError, authLoading, authSuccessMsg, resetSuccess,
     myProfile, myProfileLoading, uploadStatus, setUploadStatus,
     uploadPaths, setUploadPaths, submitError, paymentLoading,
     profile, setProfile, jobPost, setJobPost,

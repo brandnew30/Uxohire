@@ -20,7 +20,7 @@ export default function UXOHire({ user: userProp }) {
 
   return (
     <div style={styles.root}>
-      <Navbar view={s.view} setView={s.setView} user={s.user} myProfile={s.myProfile} navigate={s.navigate} onSignOut={s.handleSignOut} />
+      <Navbar view={s.view} setView={s.setView} user={s.user} myProfile={s.myProfile} navigate={s.navigate} onSignOut={s.handleSignOut} accountType={s.accountType} />
 
       <main style={styles.main} data-main-container>
         {s.authSuccessMsg && (
@@ -43,11 +43,13 @@ export default function UXOHire({ user: userProp }) {
 
         {s.view === "techs" && !s.activeTech && (
           <TechsView techs={s.techs} setActiveTech={s.setActiveTech} goToCreateProfile={s.goToCreateProfile}
-            user={s.user} myProfile={s.myProfile} navigate={s.navigate} />
+            user={s.user} myProfile={s.myProfile} navigate={s.navigate}
+            accountType={s.accountType} isPaidEmployer={s.isPaidEmployer} />
         )}
 
         {s.view === "techs" && s.activeTech && (
-          <TechDetail tech={s.activeTech} user={s.user} onBack={() => s.setActiveTech(null)} />
+          <TechDetail tech={s.activeTech} user={s.user} onBack={() => s.setActiveTech(null)}
+            accountType={s.accountType} isPaidEmployer={s.isPaidEmployer} />
         )}
 
         {s.view === "techProfile" && (
