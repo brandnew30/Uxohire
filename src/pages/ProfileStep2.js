@@ -1,5 +1,5 @@
 import styles from "../styles/theme";
-import { DOD_CERT_OPTIONS } from "../utils/constants";
+import { UXO_ROLE_OPTIONS } from "../utils/constants";
 import { isExpired, isExpiringSoon, isOlderThanOneYear, uploadFile } from "../utils/helpers";
 
 function YesNoBlock({ label, value, onYes, onNo, children }) {
@@ -55,9 +55,9 @@ export default function ProfileStep2({
 
   return (
     <div style={styles.formFields} data-form-fields>
-      <label style={styles.label}>DOD Certification Level (select all that apply)</label>
+      <label style={styles.label}>UXO Role / Certification Level (select all that apply)</label>
       <div style={styles.certGrid}>
-        {DOD_CERT_OPTIONS.map(cert => (
+        {UXO_ROLE_OPTIONS.map(cert => (
           <div key={cert} style={{ ...styles.certToggle, ...(profile.dodCerts.includes(cert) ? styles.certToggleActive : {}) }} onClick={() => toggleDodCert(cert)}>
             {profile.dodCerts.includes(cert) ? "\u2713 " : ""}{cert}
           </div>
@@ -152,20 +152,6 @@ export default function ProfileStep2({
           )}
         </YesNoBlock>
       ))}
-
-      <div style={styles.qualBlock}>
-        <label style={styles.qualBlockLabel}>State License</label>
-        <div style={styles.subField}>
-          <label style={styles.label}>License Name (leave blank if none)</label>
-          <input style={styles.input} placeholder="e.g. California UXO License" value={profile.stateLicense} onChange={e => setProfile(p => ({ ...p, stateLicense: e.target.value }))} />
-          {profile.stateLicense && (
-            <>
-              <label style={styles.label}>Expiry Date</label>
-              <input type="date" style={styles.input} value={profile.stateLicenseExpiry} onChange={e => setProfile(p => ({ ...p, stateLicenseExpiry: e.target.value }))} />
-            </>
-          )}
-        </div>
-      </div>
 
       <label style={styles.label}>Upload Certification Documents</label>
       <label htmlFor="certUpload" style={styles.uploadBox} data-upload-box>
