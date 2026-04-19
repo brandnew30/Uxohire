@@ -11,6 +11,7 @@ import CreateProfile from "./pages/CreateProfile";
 import PostJob from "./pages/PostJob";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import MyProfile from "./pages/MyProfile";
 import JobPostSuccess from "./pages/JobPostSuccess";
 
@@ -79,7 +80,15 @@ export default function UXOHire({ user: userProp }) {
           <LoginPage authForm={s.authForm} setAuthForm={s.setAuthForm} authError={s.authError}
             authLoading={s.authLoading} onLogin={s.handleLogin}
             onBack={() => { s.setView('jobs'); }}
-            onSwitchToSignup={() => { s.setView('signup'); }} />
+            onSwitchToSignup={() => { s.setView('signup'); }}
+            onForgotPassword={() => { s.setView('forgotPassword'); }}
+            resetSuccess={s.resetSuccess} />
+        )}
+
+        {s.view === 'forgotPassword' && (
+          <ForgotPasswordPage
+            onBack={() => { s.setView('jobs'); }}
+            onSwitchToLogin={() => { s.setView('login'); }} />
         )}
 
         {s.view === 'signup' && (

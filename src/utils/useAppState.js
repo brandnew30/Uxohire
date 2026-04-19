@@ -7,10 +7,12 @@ const pathToView = {
   '/': 'jobs', '/techs': 'techs', '/post-job': 'postJob',
   '/create-profile': 'techProfile', '/login': 'login', '/signup': 'signup',
   '/my-profile': 'myProfile', '/job-post-success': 'jobPostSuccess',
+  '/forgot-password': 'forgotPassword',
 };
 const viewToPath = {
   jobs: '/', techs: '/techs', postJob: '/post-job', techProfile: '/create-profile',
   login: '/login', signup: '/signup', myProfile: '/my-profile', jobPostSuccess: '/job-post-success',
+  forgotPassword: '/forgot-password',
 };
 
 export default function useAppState(userProp) {
@@ -38,6 +40,8 @@ export default function useAppState(userProp) {
   const [authLoading, setAuthLoading] = useState(false);
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
 
+  const resetSuccess = location.state?.resetSuccess || false;
+
   const [myProfile, setMyProfile] = useState(null);
   const [myProfileLoading, setMyProfileLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState({});
@@ -50,6 +54,7 @@ export default function useAppState(userProp) {
     dodCerts: [], hazwoper40: false, hazwoper40Date: "", hazwoper8: false, hazwoper8Date: "",
     physicalCurrent: false, physicalDate: "", militaryEod: false, clearance: false,
     clearanceLevel: "", diveCert: false, driversLicense: false, cdl: false,
+    jobRolePreference: "any", specificRoles: "",
   });
   const [jobPost, setJobPost] = useState({
     company: "", title: "", location: "", type: "Contract", salary: "", description: "",
@@ -60,7 +65,6 @@ export default function useAppState(userProp) {
 
   const goToCreateProfile = () => {
     if (!user) navigate('/signup', { state: { returnTo: '/create-profile' } });
-    else if (myProfile) navigate('/dashboard', { replace: true });
     else setView('techProfile');
   };
 
@@ -90,8 +94,7 @@ export default function useAppState(userProp) {
 
   useEffect(() => {
     if (view === 'techProfile' && !user) navigate('/signup', { state: { returnTo: '/create-profile' }, replace: true });
-    if (view === 'techProfile' && user && myProfile) navigate('/dashboard', { replace: true });
-  }, [view, user, myProfile]); // eslint-disable-line
+  }, [view, user]); // eslint-disable-line
 
   useEffect(() => {
     if (view === 'postJob' && user) {
@@ -124,6 +127,7 @@ export default function useAppState(userProp) {
               physicalDate: data.physical_date || '', militaryEod: data.military_eod || false,
               clearance: data.clearance || false, clearanceLevel: data.clearance_level || '',
               diveCert: data.dive_cert || false, driversLicense: data.drivers_license || false, cdl: data.cdl || false,
+              jobRolePreference: data.job_role_preference || 'any', specificRoles: data.specific_roles || '',
             });
             setOpenToWork(data.open_to_work ?? true);
             setUploadPaths({ resume: data.resume_path || null, certs: data.cert_paths || [], hazwoper8: data.hazwoper8_cert_path || null, physical: data.physical_cert_path || null });
@@ -150,7 +154,9 @@ export default function useAppState(userProp) {
       physical_date: profile.physicalDate || null, military_eod: profile.militaryEod,
       clearance: profile.clearance, clearance_level: profile.clearanceLevel,
       dive_cert: profile.diveCert, drivers_license: profile.driversLicense,
-      cdl: profile.cdl, open_to_work: openToWork, user_id: user.id,
+      cdl: profile.cdl, job_role_preference: profile.jobRolePreference,
+      specific_roles: profile.jobRolePreference === 'specific' ? profile.specificRoles : '',
+      open_to_work: openToWork, user_id: user.id,
       resume_path: uploadPaths.resume || null, cert_paths: uploadPaths.certs || [],
       hazwoper8_cert_path: uploadPaths.hazwoper8 || null, physical_cert_path: uploadPaths.physical || null,
     }, { onConflict: 'user_id' });
@@ -214,7 +220,7 @@ export default function useAppState(userProp) {
     postStep, setPostStep, filterCert, setFilterCert,
     filterLocation, setFilterLocation, notifications,
     errors, setErrors, filteredJobs, techs, dataLoading,
-    user, authForm, setAuthForm, authError, authLoading, authSuccessMsg,
+    user, authForm, setAuthForm, authError, authLoading, authSuccessMsg, resetSuccess,
     myProfile, myProfileLoading, uploadStatus, setUploadStatus,
     uploadPaths, setUploadPaths, submitError, paymentLoading,
     profile, setProfile, jobPost, setJobPost,

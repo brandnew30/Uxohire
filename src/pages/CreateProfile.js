@@ -73,6 +73,30 @@ export default function CreateProfile({
             <div style={styles.availNote}>
               {openToWork ? "\u2705 Your profile will be visible to hiring companies." : "\uD83D\uDD12 Your profile is hidden from company searches."}
             </div>
+
+            <label style={{ ...styles.label, marginTop: 12 }}>Job Role Preference</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14, color: '#e8e4dc' }}>
+                <input type="radio" name="jobRolePref" value="any"
+                  checked={profile.jobRolePreference === 'any'}
+                  onChange={() => setProfile(p => ({ ...p, jobRolePreference: 'any', specificRoles: '' }))}
+                  style={{ accentColor: '#d97706' }} />
+                Open to any job I qualify for
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14, color: '#e8e4dc' }}>
+                <input type="radio" name="jobRolePref" value="specific"
+                  checked={profile.jobRolePreference === 'specific'}
+                  onChange={() => setProfile(p => ({ ...p, jobRolePreference: 'specific' }))}
+                  style={{ accentColor: '#d97706' }} />
+                Specific roles only
+              </label>
+              {profile.jobRolePreference === 'specific' && (
+                <input style={styles.input} placeholder="e.g. UXO Tech III, QC Specialist, Site Lead"
+                  value={profile.specificRoles}
+                  onChange={e => setProfile(p => ({ ...p, specificRoles: e.target.value }))} />
+              )}
+            </div>
+
             <div style={styles.formRow} data-form-row>
               <button style={styles.btnSecondary} data-btn-secondary onClick={() => setProfileStep(2)}>{"\u2190"} Back</button>
               <button style={styles.btnPrimary} data-btn-primary onClick={onSubmit}>{myProfile ? 'Update Profile \u2713' : 'Submit Profile \u2713'}</button>

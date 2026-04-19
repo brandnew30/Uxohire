@@ -313,7 +313,7 @@ body, html {
   max-width: 100%;
 }
 
-* {
+*:not(button) {
   max-width: 100%;
 }
 

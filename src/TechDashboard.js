@@ -254,6 +254,13 @@ export default function TechDashboard({ user }) {
   const scoredJobs = jobs
     .map(job => ({ ...job, ...scoreJob(job, profile) }))
     .filter(j => j.qualified)
+    .filter(j => {
+      if (profile.job_role_preference !== 'specific' || !profile.specific_roles) return true;
+      const wanted = profile.specific_roles.toLowerCase().split(',').map(r => r.trim()).filter(Boolean);
+      if (wanted.length === 0) return true;
+      const title = (j.title || '').toLowerCase();
+      return wanted.some(role => title.includes(role));
+    })
     .sort((a, b) => b.matchPct - a.matchPct);
 
   const CERT_LABELS = {
@@ -303,6 +310,7 @@ export default function TechDashboard({ user }) {
             <div style={s.headerName}>{profile.name}</div>
           </div>
           <div style={s.headerRight}>
+            <button style={s.editProfileBtn} onClick={() => navigate("/create-profile")}>Edit Profile</button>
             <button style={s.backBtn} onClick={() => navigate("/")}>{"\u2190"} Home</button>
           </div>
         </div>
@@ -369,6 +377,12 @@ export default function TechDashboard({ user }) {
               <h2 style={s.sectionTitle}>Jobs You Qualify For</h2>
               <span style={s.sectionSub}>{scoredJobs.length} matched listings</span>
             </div>
+            {profile.job_role_preference === 'specific' && profile.specific_roles && (
+              <div style={{ background: '#1a1408', border: '1px solid #d9770633', borderRadius: 8,
+                padding: '10px 14px', fontSize: 13, color: '#d97706', marginBottom: 16 }}>
+                {"\uD83C\uDFAF"} Filtering for: {profile.specific_roles}
+              </div>
+            )}
 
             {scoredJobs.length === 0 && (
               <div style={s.emptyState}>
@@ -832,6 +846,9 @@ const s = {
   headerName:    { fontSize: 20, fontWeight: "bold", letterSpacing: "-0.3px",
                    overflowWrap: "break-word", wordBreak: "break-word" },
   headerRight:   { display: "flex", alignItems: "center", gap: 12 },
+  editProfileBtn:{ background: "#d97706", border: "none", color: "#0d0f10",
+                   cursor: "pointer", padding: "6px 14px", fontSize: 13,
+                   borderRadius: 6, fontFamily: "inherit", fontWeight: "bold" },
   backBtn:       { background: "none", border: "1px solid #333", color: "#9a9490",
                    cursor: "pointer", padding: "6px 14px", fontSize: 13,
                    borderRadius: 6, fontFamily: "inherit" },

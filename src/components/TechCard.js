@@ -22,6 +22,16 @@ export default function TechCard({ tech, onClick }) {
         {tech.diveCert && <span style={{ ...styles.certTag, background: "#0d5f7a" }} data-cert-tag>Dive Certified</span>}
         {tech.clearance && <span style={{ ...styles.certTag, background: "#8B0000" }} data-cert-tag>Clearance: {tech.clearanceLevel}</span>}
       </div>
+      {tech.jobRolePreference === 'specific' && tech.specificRoles && (
+        <div style={{ fontSize: 12, color: '#d97706', marginTop: 8, marginBottom: 4 }}>
+          {"\uD83C\uDFAF"} Seeking: {tech.specificRoles}
+        </div>
+      )}
+      {tech.jobRolePreference === 'any' && (
+        <div style={{ fontSize: 12, color: '#4ade80', marginTop: 8, marginBottom: 4 }}>
+          {"\u2705"} Open to any qualifying role
+        </div>
+      )}
       <div style={styles.cardFooter}>
         <span style={styles.cardLink}>View Profile {"\u2192"}</span>
       </div>

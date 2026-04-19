@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 import UXOHire from './UXOHire';
 import TechDashboard from './TechDashboard';
 import EmployerDashboard from './EmployerDashboard';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = loading
@@ -42,6 +43,8 @@ export default function App() {
               : <Navigate to="/login" replace state={{ returnTo: '/employer-dashboard' }} />
           }
         />
+        {/* Password reset — standalone page (handles Supabase email callback) */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         {/* Everything else handled by UXOHire (includes its own routing) */}
         <Route path="/*" element={<UXOHire user={user} />} />
       </Routes>
