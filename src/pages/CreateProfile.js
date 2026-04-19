@@ -75,16 +75,18 @@ export default function CreateProfile({
             </div>
 
             <div style={styles.toggleRow} data-toggle-row>
-              <div style={styles.toggleInfo}>
-                <div style={styles.toggleTitle}>Visible to Other Technicians</div>
-                <div style={styles.toggleSub}>When active, other techs can see your profile on the Technicians page.</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <div style={styles.toggleInfo}>
+                  <div style={styles.toggleTitle}>Visible to Other Technicians</div>
+                  <div style={styles.toggleSub}>When active, other techs can see your profile on the Technicians page.</div>
+                </div>
+                <div style={{ ...styles.toggleSwitch, background: profile.visibleToTechs ? "#d97706" : "#333" }} data-toggle-switch onClick={() => setProfile(p => ({ ...p, visibleToTechs: !p.visibleToTechs }))}>
+                  <div style={{ ...styles.toggleKnob, transform: profile.visibleToTechs ? "translateX(24px)" : "translateX(0)" }} />
+                </div>
               </div>
-              <div style={{ ...styles.toggleSwitch, background: profile.visibleToTechs ? "#d97706" : "#333" }} data-toggle-switch onClick={() => setProfile(p => ({ ...p, visibleToTechs: !p.visibleToTechs }))}>
-                <div style={{ ...styles.toggleKnob, transform: profile.visibleToTechs ? "translateX(24px)" : "translateX(0)" }} />
+              <div style={{ fontSize: 13, color: '#7a7570', lineHeight: 1.5, marginTop: 8, borderTop: '1px solid #2a2c2e', paddingTop: 10 }}>
+                Your profile remains visible to employers when "Open to Work" is enabled. This setting only controls visibility to other technicians.
               </div>
-            </div>
-            <div style={styles.availNote}>
-              Your profile remains visible to employers when "Open to Work" is enabled. This setting only controls visibility to other technicians.
             </div>
 
             <label style={{ ...styles.label, marginTop: 12 }}>Job Role Preference</label>
