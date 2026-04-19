@@ -18,17 +18,23 @@ export default function EmployerOnboarding({ user }) {
       return;
     }
     setLoading(true); setError('');
+    // Ensure user_accounts record exists (may be missing if email confirmation was required)
+    await supabase.from('user_accounts').upsert({
+      user_id: user.id, account_type: 'employer',
+    }, { onConflict: 'user_id' });
     const { error: dbError } = await supabase.from('employer_profiles').upsert({
       user_id: user.id,
       company_name: form.companyName,
       contact_name: form.contactName,
-      email: form.email,
+      contact_email: form.email,
       phone: form.phone || null,
       website: form.website || null,
     }, { onConflict: 'user_id' });
     setLoading(false);
-    if (dbError) setError('Something went wrong. Please try again.');
-    else navigate('/employer-dashboard', { replace: true });
+    if (dbError) {
+      console.error('Employer profile save error:', dbError);
+      setError(`Something went wrong: ${dbError.message}`);
+    } else navigate('/employer-dashboard', { replace: true });
   };
 
   return (
